@@ -1,7 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { BarChart3, Heart, MessageCircle, TrendingUp, Trophy, Flame } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
-import { useStore, getWeeklyStats, getLevelName } from "@/lib/store";
+import { useAuth } from "@/lib/auth";
+import { useAppData } from "@/hooks/use-app-data";
+import { getWeeklyStats, getLevelName, type Post } from "@/lib/store";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 export const Route = createFileRoute("/analytics")({
@@ -15,14 +18,31 @@ export const Route = createFileRoute("/analytics")({
 });
 
 function AnalyticsPage() {
-  const state = useStore();
-  const weekStats = getWeeklyStats(state.posts);
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+  const { posts, streak, longestStreak, totalPoints, level, loading } = useAppData();
 
-  const publishedPosts = state.posts
-    .filter((p) => p.status === "published" && (p.reactions !== undefined || p.comments !== undefined))
-    .sort((a, b) => a.scheduledDate.localeCompare(b.scheduledDate));
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate({ to: "/login" });
+    }
+  }, [authLoading, user, navigate]);
 
-  const chartData = publishedPosts.map((p) => ({
+  if (authLoading || loading || !user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  const weekStats = getWeeklyStats(posts);
+
+  const publishedPosts = posts
+    .filter((p: Post) => p.status === "published" && (p.reactions !== undefined || p.comments !== undefined))
+    .sort((a: Post, b: Post) => a.scheduledDate.localeCompare(b.scheduledDate));
+
+  const chartData = publishedPosts.map((p: Post) => ({
     date: new Date(p.scheduledDate + "T00:00:00").toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" }),
     engagement: (p.reactions || 0) + (p.comments || 0),
     reactions: p.reactions || 0,
@@ -30,7 +50,7 @@ function AnalyticsPage() {
   }));
 
   const topPosts = [...publishedPosts]
-    .sort((a, b) => ((b.reactions || 0) + (b.comments || 0)) - ((a.reactions || 0) + (a.comments || 0)))
+    .sort((a: Post, b: Post) => ((b.reactions || 0) + (b.comments || 0)) - ((a.reactions || 0) + (a.comments || 0)))
     .slice(0, 3);
 
   return (
@@ -38,13 +58,12 @@ function AnalyticsPage() {
       <div className="max-w-lg mx-auto px-4 pt-6">
         <h1 className="text-xl font-bold text-foreground mb-6">Statistiques</h1>
 
-        {/* Overview Cards */}
         <div className="grid grid-cols-2 gap-3 mb-6">
           {[
-            { label: "Total publiés", value: state.posts.filter((p) => p.status === "published").length, icon: BarChart3, color: "text-primary" },
-            { label: "Streak actuel", value: state.streak, icon: Flame, color: "text-streak" },
-            { label: "Meilleur streak", value: state.longestStreak, icon: Trophy, color: "text-warning" },
-            { label: "Points", value: state.totalPoints, icon: TrendingUp, color: "text-success" },
+            { label: "Total publiés", value: posts.filter((p: Post) => p.status === "published").length, icon: BarChart3, color: "text-primary" },
+            { label: "Streak actuel", value: streak, icon: Flame, color: "text-streak" },
+            { label: "Meilleur streak", value: longestStreak, icon: Trophy, color: "text-warning" },
+            { label: "Points", value: totalPoints, icon: TrendingUp, color: "text-success" },
           ].map((card) => (
             <div key={card.label} className="bg-card rounded-2xl p-4 shadow-card border border-border">
               <card.icon className={`w-5 h-5 ${card.color} mb-2`} />
@@ -54,28 +73,21 @@ function AnalyticsPage() {
           ))}
         </div>
 
-        {/* Level */}
         <div className="bg-card rounded-2xl p-4 shadow-card border border-border mb-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold text-foreground">Niveau {state.level}</p>
-              <p className="text-xs text-muted-foreground">{getLevelName(state.level)}</p>
+              <p className="text-sm font-semibold text-foreground">Niveau {level}</p>
+              <p className="text-xs text-muted-foreground">{getLevelName(level)}</p>
             </div>
             <div className="flex-1 mx-4">
               <div className="h-2 bg-muted rounded-full overflow-hidden">
-                <div
-                  className="h-full gradient-primary rounded-full transition-all duration-500"
-                  style={{ width: `${((state.streak % 7) / 7) * 100}%` }}
-                />
+                <div className="h-full gradient-primary rounded-full transition-all duration-500" style={{ width: `${((streak % 7) / 7) * 100}%` }} />
               </div>
-              <p className="text-[9px] text-muted-foreground mt-1 text-right">
-                {7 - (state.streak % 7)} jours avant niv. {state.level + 1}
-              </p>
+              <p className="text-[9px] text-muted-foreground mt-1 text-right">{7 - (streak % 7)} jours avant niv. {level + 1}</p>
             </div>
           </div>
         </div>
 
-        {/* Engagement Chart */}
         {chartData.length > 0 && (
           <div className="bg-card rounded-2xl p-4 shadow-card border border-border mb-6">
             <p className="text-sm font-semibold text-foreground mb-4">Engagement</p>
@@ -84,28 +96,13 @@ function AnalyticsPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis dataKey="date" tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }} />
                 <YAxis tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }} />
-                <Tooltip
-                  contentStyle={{
-                    background: "var(--color-card)",
-                    border: "1px solid var(--color-border)",
-                    borderRadius: "12px",
-                    fontSize: "12px",
-                  }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="engagement"
-                  stroke="var(--color-primary)"
-                  strokeWidth={2.5}
-                  dot={{ fill: "var(--color-primary)", r: 4 }}
-                  activeDot={{ r: 6 }}
-                />
+                <Tooltip contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: "12px", fontSize: "12px" }} />
+                <Line type="monotone" dataKey="engagement" stroke="var(--color-primary)" strokeWidth={2.5} dot={{ fill: "var(--color-primary)", r: 4 }} activeDot={{ r: 6 }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
         )}
 
-        {/* Weekly Summary */}
         <div className="bg-card rounded-2xl p-4 shadow-card border border-border mb-6">
           <p className="text-sm font-semibold text-foreground mb-3">Cette semaine</p>
           <div className="grid grid-cols-3 gap-3">
@@ -128,14 +125,13 @@ function AnalyticsPage() {
           </div>
         </div>
 
-        {/* Top Posts */}
         {topPosts.length > 0 && (
           <div className="mb-4">
             <p className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
               <Trophy className="w-4 h-4 text-warning" /> Meilleurs posts
             </p>
             <div className="space-y-2">
-              {topPosts.map((post, i) => (
+              {topPosts.map((post: Post, i: number) => (
                 <div key={post.id} className="bg-card rounded-xl p-3 shadow-card border border-border">
                   <div className="flex items-start gap-2">
                     <span className="text-lg">{i === 0 ? "🥇" : i === 1 ? "🥈" : "🥉"}</span>

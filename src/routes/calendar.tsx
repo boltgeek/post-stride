@@ -1,8 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, Check, X, Clock } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
-import { useStore } from "@/lib/store";
+import { useAuth } from "@/lib/auth";
+import { useAppData } from "@/hooks/use-app-data";
 import type { Post } from "@/lib/store";
 
 export const Route = createFileRoute("/calendar")({
@@ -16,13 +17,29 @@ export const Route = createFileRoute("/calendar")({
 });
 
 function CalendarPage() {
-  const state = useStore();
+  const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+  const { posts, loading } = useAppData();
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10));
 
-  const dates = [...new Set(state.posts.map((p) => p.scheduledDate))].sort();
-  const selectedPosts = state.posts
-    .filter((p) => p.scheduledDate === selectedDate)
-    .sort((a, b) => a.scheduledTime.localeCompare(b.scheduledTime));
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate({ to: "/login" });
+    }
+  }, [authLoading, user, navigate]);
+
+  if (authLoading || loading || !user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  const dates = [...new Set(posts.map((p: Post) => p.scheduledDate))].sort();
+  const selectedPosts = posts
+    .filter((p: Post) => p.scheduledDate === selectedDate)
+    .sort((a: Post, b: Post) => a.scheduledTime.localeCompare(b.scheduledTime));
 
   const currentIdx = dates.indexOf(selectedDate);
 
@@ -58,76 +75,48 @@ function CalendarPage() {
           </div>
         ) : (
           <>
-            {/* Date Nav */}
             <div className="flex items-center justify-between bg-card rounded-2xl p-3 shadow-card border border-border mb-5">
-              <button
-                onClick={() => goTo(-1)}
-                disabled={currentIdx <= 0}
-                className="p-2 rounded-xl hover:bg-accent disabled:opacity-30 transition-all"
-              >
+              <button onClick={() => goTo(-1)} disabled={currentIdx <= 0} className="p-2 rounded-xl hover:bg-accent disabled:opacity-30 transition-all">
                 <ChevronLeft className="w-5 h-5 text-foreground" />
               </button>
-              <span className="text-sm font-semibold text-foreground capitalize">
-                {formatDate(selectedDate)}
-              </span>
-              <button
-                onClick={() => goTo(1)}
-                disabled={currentIdx >= dates.length - 1}
-                className="p-2 rounded-xl hover:bg-accent disabled:opacity-30 transition-all"
-              >
+              <span className="text-sm font-semibold text-foreground capitalize">{formatDate(selectedDate)}</span>
+              <button onClick={() => goTo(1)} disabled={currentIdx >= dates.length - 1} className="p-2 rounded-xl hover:bg-accent disabled:opacity-30 transition-all">
                 <ChevronRight className="w-5 h-5 text-foreground" />
               </button>
             </div>
 
-            {/* Date dots */}
             <div className="flex gap-1.5 overflow-x-auto pb-3 mb-4 scrollbar-none">
               {dates.map((d) => {
-                const dayPosts = state.posts.filter((p) => p.scheduledDate === d);
-                const allDone = dayPosts.every((p) => p.status !== "pending");
+                const dayPosts = posts.filter((p: Post) => p.scheduledDate === d);
+                const allDone = dayPosts.every((p: Post) => p.status !== "pending");
                 const isToday = d === new Date().toISOString().slice(0, 10);
                 return (
                   <button
                     key={d}
                     onClick={() => setSelectedDate(d)}
                     className={`flex flex-col items-center gap-0.5 min-w-[44px] rounded-xl py-2 px-1 transition-all ${
-                      d === selectedDate
-                        ? "gradient-primary text-primary-foreground"
-                        : "bg-card border border-border"
+                      d === selectedDate ? "gradient-primary text-primary-foreground" : "bg-card border border-border"
                     }`}
                   >
                     <span className="text-[9px] font-medium uppercase">
                       {new Date(d + "T00:00:00").toLocaleDateString("fr-FR", { weekday: "short" })}
                     </span>
-                    <span className="text-xs font-bold">
-                      {new Date(d + "T00:00:00").getDate()}
-                    </span>
-                    {allDone && dayPosts.length > 0 && (
-                      <div className="w-1.5 h-1.5 rounded-full bg-success" />
-                    )}
-                    {isToday && d !== selectedDate && (
-                      <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                    )}
+                    <span className="text-xs font-bold">{new Date(d + "T00:00:00").getDate()}</span>
+                    {allDone && dayPosts.length > 0 && <div className="w-1.5 h-1.5 rounded-full bg-success" />}
+                    {isToday && d !== selectedDate && <div className="w-1.5 h-1.5 rounded-full bg-primary" />}
                   </button>
                 );
               })}
             </div>
 
-            {/* Posts list */}
             <div className="space-y-2">
-              {selectedPosts.map((post) => (
-                <div
-                  key={post.id}
-                  className="bg-card rounded-xl p-4 shadow-card border border-border animate-slide-up"
-                >
+              {selectedPosts.map((post: Post) => (
+                <div key={post.id} className="bg-card rounded-xl p-4 shadow-card border border-border animate-slide-up">
                   <div className="flex items-center gap-2 mb-2">
-                    <div className="w-6 h-6 rounded-full bg-accent flex items-center justify-center">
-                      {statusIcon(post)}
-                    </div>
+                    <div className="w-6 h-6 rounded-full bg-accent flex items-center justify-center">{statusIcon(post)}</div>
                     <span className="text-xs text-muted-foreground">{post.scheduledTime}</span>
                     <span className={`text-[10px] ml-auto font-medium ${
-                      post.status === "published" ? "text-success" :
-                      post.status === "skipped" ? "text-destructive" :
-                      "text-muted-foreground"
+                      post.status === "published" ? "text-success" : post.status === "skipped" ? "text-destructive" : "text-muted-foreground"
                     }`}>
                       {post.status === "published" ? "Publié" : post.status === "skipped" ? "Ignoré" : "En attente"}
                     </span>
