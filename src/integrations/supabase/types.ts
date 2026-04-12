@@ -14,7 +14,84 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      posts: {
+        Row: {
+          comments: number | null
+          content: string
+          created_at: string
+          id: string
+          published_at: string | null
+          reactions: number | null
+          scheduled_date: string
+          scheduled_time: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          comments?: number | null
+          content: string
+          created_at?: string
+          id?: string
+          published_at?: string | null
+          reactions?: number | null
+          scheduled_date: string
+          scheduled_time?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          comments?: number | null
+          content?: string
+          created_at?: string
+          id?: string
+          published_at?: string | null
+          reactions?: number | null
+          scheduled_date?: string
+          scheduled_time?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_stats: {
+        Row: {
+          created_at: string
+          id: string
+          last_active_date: string | null
+          level: number
+          longest_streak: number
+          posts_per_day: number
+          streak: number
+          total_points: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_active_date?: string | null
+          level?: number
+          longest_streak?: number
+          posts_per_day?: number
+          streak?: number
+          total_points?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_active_date?: string | null
+          level?: number
+          longest_streak?: number
+          posts_per_day?: number
+          streak?: number
+          total_points?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
