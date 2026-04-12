@@ -1,10 +1,10 @@
-import { useSyncExternalStore } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface Post {
   id: string;
   content: string;
-  scheduledDate: string; // YYYY-MM-DD
-  scheduledTime: string; // HH:mm
+  scheduledDate: string;
+  scheduledTime: string;
   status: "pending" | "published" | "skipped";
   reactions?: number;
   comments?: number;
@@ -21,85 +21,62 @@ export interface AppState {
   postsPerDay: number;
 }
 
-const STORAGE_KEY = "postpilot-state";
-
-const defaultState: AppState = {
-  posts: [],
-  streak: 0,
-  longestStreak: 0,
-  totalPoints: 0,
-  level: 1,
-  lastActiveDate: null,
-  postsPerDay: 3,
-};
-
-function loadState(): AppState {
-  try {
-    if (typeof window === "undefined") return defaultState;
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return defaultState;
-    return { ...defaultState, ...JSON.parse(raw) };
-  } catch {
-    return defaultState;
-  }
-}
-
-let state: AppState = defaultState;
-let listeners: Set<() => void> = new Set();
-
-function emitChange() {
-  if (typeof window !== "undefined") {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  }
-  listeners.forEach((l) => l());
-}
-
-function setState(partial: Partial<AppState>) {
-  state = { ...state, ...partial };
-  emitChange();
-}
-
-export function initStore() {
-  state = loadState();
-  checkStreak();
-  emitChange();
+// Convert DB row to Post
+function rowToPost(row: any): Post {
+  return {
+    id: row.id,
+    content: row.content,
+    scheduledDate: row.scheduled_date,
+    scheduledTime: row.scheduled_time?.slice(0, 5) || "09:00",
+    status: row.status as Post["status"],
+    reactions: row.reactions ?? undefined,
+    comments: row.comments ?? undefined,
+    publishedAt: row.published_at ?? undefined,
+  };
 }
 
 function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function checkStreak() {
-  if (!state.lastActiveDate) return;
-  const last = new Date(state.lastActiveDate);
-  const now = new Date(today());
-  const diffDays = Math.floor((now.getTime() - last.getTime()) / 86400000);
-  if (diffDays > 1) {
-    setState({ streak: 0 });
-  }
+// ---- Data fetching ----
+
+export async function fetchPosts(): Promise<Post[]> {
+  const { data, error } = await supabase
+    .from("posts")
+    .select("*")
+    .order("scheduled_date", { ascending: true })
+    .order("scheduled_time", { ascending: true });
+  if (error) throw error;
+  return (data || []).map(rowToPost);
 }
 
-function incrementStreak() {
-  const t = today();
-  if (state.lastActiveDate === t) return;
-  const newStreak = state.streak + 1;
-  const newLongest = Math.max(newStreak, state.longestStreak);
-  const newLevel = Math.floor(newStreak / 7) + 1;
-  setState({
-    streak: newStreak,
-    longestStreak: newLongest,
-    lastActiveDate: t,
-    level: newLevel,
-  });
+export async function fetchUserStats(): Promise<Omit<AppState, "posts"> | null> {
+  const { data, error } = await supabase
+    .from("user_stats")
+    .select("*")
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  return {
+    streak: data.streak,
+    longestStreak: data.longest_streak,
+    totalPoints: data.total_points,
+    level: data.level,
+    lastActiveDate: data.last_active_date,
+    postsPerDay: data.posts_per_day,
+  };
 }
 
-export function parseContent(text: string, postsPerDay: number): Post[] {
+// ---- Mutations ----
+
+export function parseContent(text: string, postsPerDay: number): Omit<Post, "id">[] {
   const blocks = text
     .split(/\n{2,}|\r\n{2,}/)
     .map((b) => b.trim())
     .filter((b) => b.length > 10);
 
-  const posts: Post[] = [];
+  const posts: Omit<Post, "id">[] = [];
   const startDate = new Date();
   const times = ["09:00", "13:00", "18:00", "08:00", "11:00", "15:00", "17:00", "19:00", "20:00", "21:00"];
 
@@ -110,7 +87,6 @@ export function parseContent(text: string, postsPerDay: number): Post[] {
     date.setDate(date.getDate() + dayOffset);
 
     posts.push({
-      id: crypto.randomUUID(),
       content,
       scheduledDate: date.toISOString().slice(0, 10),
       scheduledTime: times[timeIndex] || times[0],
@@ -121,54 +97,93 @@ export function parseContent(text: string, postsPerDay: number): Post[] {
   return posts;
 }
 
-export function addPosts(newPosts: Post[]) {
-  setState({ posts: [...state.posts, ...newPosts] });
+export async function addPosts(userId: string, newPosts: Omit<Post, "id">[]) {
+  const rows = newPosts.map((p) => ({
+    user_id: userId,
+    content: p.content,
+    scheduled_date: p.scheduledDate,
+    scheduled_time: p.scheduledTime,
+    status: p.status,
+  }));
+  const { error } = await supabase.from("posts").insert(rows);
+  if (error) throw error;
 }
 
-export function publishPost(id: string) {
-  const posts = state.posts.map((p) =>
-    p.id === id
-      ? { ...p, status: "published" as const, publishedAt: new Date().toISOString() }
-      : p
-  );
-  const pts = state.totalPoints + 10;
-  setState({ posts, totalPoints: pts });
-  incrementStreak();
+export async function publishPost(postId: string) {
+  const { error: postError } = await supabase
+    .from("posts")
+    .update({ status: "published", published_at: new Date().toISOString() })
+    .eq("id", postId);
+  if (postError) throw postError;
+
+  // Update stats
+  const stats = await fetchUserStats();
+  if (!stats) return;
+
+  const t = today();
+  let newStreak = stats.streak;
+  let newLongest = stats.longestStreak;
+  let newLevel = stats.level;
+
+  if (stats.lastActiveDate !== t) {
+    // Check if streak should reset
+    if (stats.lastActiveDate) {
+      const last = new Date(stats.lastActiveDate);
+      const now = new Date(t);
+      const diffDays = Math.floor((now.getTime() - last.getTime()) / 86400000);
+      if (diffDays > 1) newStreak = 0;
+    }
+    newStreak += 1;
+    newLongest = Math.max(newStreak, newLongest);
+    newLevel = Math.floor(newStreak / 7) + 1;
+  }
+
+  const { error: statsError } = await supabase
+    .from("user_stats")
+    .update({
+      streak: newStreak,
+      longest_streak: newLongest,
+      total_points: stats.totalPoints + 10,
+      level: newLevel,
+      last_active_date: t,
+    })
+    .eq("user_id", (await supabase.auth.getUser()).data.user!.id);
+  if (statsError) throw statsError;
 }
 
-export function skipPost(id: string) {
-  const posts = state.posts.map((p) =>
-    p.id === id ? { ...p, status: "skipped" as const } : p
-  );
-  setState({ posts });
+export async function skipPost(postId: string) {
+  const { error } = await supabase
+    .from("posts")
+    .update({ status: "skipped" })
+    .eq("id", postId);
+  if (error) throw error;
 }
 
-export function updatePostStats(id: string, reactions: number, comments: number) {
-  const posts = state.posts.map((p) =>
-    p.id === id ? { ...p, reactions, comments } : p
-  );
-  setState({ posts });
+export async function updatePostStats(postId: string, reactions: number, comments: number) {
+  const { error } = await supabase
+    .from("posts")
+    .update({ reactions, comments })
+    .eq("id", postId);
+  if (error) throw error;
 }
 
-export function setPostsPerDay(n: number) {
-  setState({ postsPerDay: n });
+export async function setPostsPerDay(userId: string, n: number) {
+  const { error } = await supabase
+    .from("user_stats")
+    .update({ posts_per_day: n })
+    .eq("user_id", userId);
+  if (error) throw error;
 }
 
-export function clearAllData() {
-  state = defaultState;
-  emitChange();
+export async function clearAllData(userId: string) {
+  await supabase.from("posts").delete().eq("user_id", userId);
+  await supabase
+    .from("user_stats")
+    .update({ streak: 0, longest_streak: 0, total_points: 0, level: 1, last_active_date: null, posts_per_day: 3 })
+    .eq("user_id", userId);
 }
 
-export function useStore(): AppState {
-  return useSyncExternalStore(
-    (cb) => {
-      listeners.add(cb);
-      return () => listeners.delete(cb);
-    },
-    () => state,
-    () => defaultState
-  );
-}
+// ---- Helpers (pure functions, no DB) ----
 
 export function getTodayPosts(posts: Post[]): Post[] {
   const t = today();

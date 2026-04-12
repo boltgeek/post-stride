@@ -3,6 +3,7 @@ import { Check, X, Copy, Clock, MessageCircle, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Post } from "@/lib/store";
 import { publishPost, skipPost, updatePostStats } from "@/lib/store";
+import { useInvalidateAppData } from "@/hooks/use-app-data";
 
 interface PostCardProps {
   post: Post;
@@ -14,6 +15,8 @@ export function PostCard({ post, isNext }: PostCardProps) {
   const [showStats, setShowStats] = useState(false);
   const [reactions, setReactions] = useState(post.reactions?.toString() || "");
   const [comments, setComments] = useState(post.comments?.toString() || "");
+  const [acting, setActing] = useState(false);
+  const invalidate = useInvalidateAppData();
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(post.content);
@@ -21,14 +24,42 @@ export function PostCard({ post, isNext }: PostCardProps) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handlePublish = () => {
-    publishPost(post.id);
-    setShowStats(true);
+  const handlePublish = async () => {
+    setActing(true);
+    try {
+      await publishPost(post.id);
+      invalidate();
+      setShowStats(true);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setActing(false);
+    }
   };
 
-  const handleSaveStats = () => {
-    updatePostStats(post.id, parseInt(reactions) || 0, parseInt(comments) || 0);
-    setShowStats(false);
+  const handleSkip = async () => {
+    setActing(true);
+    try {
+      await skipPost(post.id);
+      invalidate();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setActing(false);
+    }
+  };
+
+  const handleSaveStats = async () => {
+    setActing(true);
+    try {
+      await updatePostStats(post.id, parseInt(reactions) || 0, parseInt(comments) || 0);
+      invalidate();
+      setShowStats(false);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setActing(false);
+    }
   };
 
   if (post.status === "published" && !showStats) {
@@ -81,30 +112,16 @@ export function PostCard({ post, isNext }: PostCardProps) {
             <label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-1">
               <Heart className="w-3 h-3" /> Réactions
             </label>
-            <input
-              type="number"
-              min="0"
-              value={reactions}
-              onChange={(e) => setReactions(e.target.value)}
-              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-center"
-              placeholder="0"
-            />
+            <input type="number" min="0" value={reactions} onChange={(e) => setReactions(e.target.value)} className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-center" placeholder="0" />
           </div>
           <div className="flex-1">
             <label className="text-[10px] text-muted-foreground flex items-center gap-1 mb-1">
               <MessageCircle className="w-3 h-3" /> Commentaires
             </label>
-            <input
-              type="number"
-              min="0"
-              value={comments}
-              onChange={(e) => setComments(e.target.value)}
-              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-center"
-              placeholder="0"
-            />
+            <input type="number" min="0" value={comments} onChange={(e) => setComments(e.target.value)} className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm text-center" placeholder="0" />
           </div>
         </div>
-        <Button onClick={handleSaveStats} className="w-full rounded-xl gradient-primary text-primary-foreground shadow-primary">
+        <Button onClick={handleSaveStats} disabled={acting} className="w-full rounded-xl gradient-primary text-primary-foreground shadow-primary">
           Enregistrer
         </Button>
       </div>
@@ -118,33 +135,18 @@ export function PostCard({ post, isNext }: PostCardProps) {
           <Clock className="w-3.5 h-3.5" /> {post.scheduledTime}
         </span>
         {isNext && (
-          <span className="text-[10px] font-bold text-primary-foreground bg-primary px-2 py-0.5 rounded-full animate-pulse-glow">
-            MAINTENANT
-          </span>
+          <span className="text-[10px] font-bold text-primary-foreground bg-primary px-2 py-0.5 rounded-full animate-pulse-glow">MAINTENANT</span>
         )}
       </div>
-
       <p className="text-sm text-foreground leading-relaxed mb-4 whitespace-pre-wrap">{post.content}</p>
-
       <div className="flex gap-2">
-        <Button
-          onClick={handlePublish}
-          className="flex-1 rounded-xl gradient-primary text-primary-foreground shadow-primary h-12 text-base font-semibold"
-        >
+        <Button onClick={handlePublish} disabled={acting} className="flex-1 rounded-xl gradient-primary text-primary-foreground shadow-primary h-12 text-base font-semibold">
           <Check className="w-5 h-5 mr-1" /> Publié ✓
         </Button>
-        <Button
-          variant="outline"
-          onClick={handleCopy}
-          className="rounded-xl h-12 px-4"
-        >
+        <Button variant="outline" onClick={handleCopy} className="rounded-xl h-12 px-4">
           {copied ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
         </Button>
-        <Button
-          variant="ghost"
-          onClick={() => skipPost(post.id)}
-          className="rounded-xl h-12 px-4 text-muted-foreground"
-        >
+        <Button variant="ghost" onClick={handleSkip} disabled={acting} className="rounded-xl h-12 px-4 text-muted-foreground">
           <X className="w-4 h-4" />
         </Button>
       </div>
