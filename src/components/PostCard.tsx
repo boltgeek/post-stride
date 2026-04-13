@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { Check, X, Copy, Clock, MessageCircle, Heart } from "lucide-react";
+import { Check, X, Copy, Clock, MessageCircle, Heart, Pencil, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Post } from "@/lib/store";
-import { publishPost, skipPost, updatePostStats } from "@/lib/store";
+import { publishPost, skipPost, updatePostStats, updatePostContent, deletePost } from "@/lib/store";
 import { useInvalidateAppData } from "@/hooks/use-app-data";
 
 interface PostCardProps {
@@ -16,6 +16,8 @@ export function PostCard({ post, isNext }: PostCardProps) {
   const [reactions, setReactions] = useState(post.reactions?.toString() || "");
   const [comments, setComments] = useState(post.comments?.toString() || "");
   const [acting, setActing] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editText, setEditText] = useState(post.content);
   const invalidate = useInvalidateAppData();
 
   const handleCopy = async () => {
@@ -62,6 +64,31 @@ export function PostCard({ post, isNext }: PostCardProps) {
     }
   };
 
+  const handleSaveEdit = async () => {
+    setActing(true);
+    try {
+      await updatePostContent(post.id, editText);
+      invalidate();
+      setEditing(false);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setActing(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setActing(true);
+    try {
+      await deletePost(post.id);
+      invalidate();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setActing(false);
+    }
+  };
+
   if (post.status === "published" && !showStats) {
     return (
       <div className="bg-card rounded-2xl p-4 shadow-card border border-border opacity-75 animate-slide-up">
@@ -93,6 +120,9 @@ export function PostCard({ post, isNext }: PostCardProps) {
             <X className="w-3.5 h-3.5 text-destructive" />
           </div>
           <span className="text-xs font-medium text-destructive">Ignoré</span>
+          <button onClick={handleDelete} disabled={acting} className="ml-auto p-1 rounded-lg hover:bg-destructive/10 transition-colors">
+            <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
+          </button>
         </div>
         <p className="text-sm text-muted-foreground line-clamp-2">{post.content}</p>
       </div>
@@ -128,15 +158,44 @@ export function PostCard({ post, isNext }: PostCardProps) {
     );
   }
 
+  // Editing mode
+  if (editing) {
+    return (
+      <div className={`bg-card rounded-2xl p-5 shadow-card border-2 border-primary animate-slide-up`}>
+        <textarea
+          value={editText}
+          onChange={(e) => setEditText(e.target.value)}
+          className="w-full rounded-xl border border-input bg-background p-3 text-sm text-foreground resize-none min-h-[120px] focus:ring-2 focus:ring-primary outline-none"
+        />
+        <div className="flex gap-2 mt-3">
+          <Button onClick={handleSaveEdit} disabled={acting} className="flex-1 rounded-xl gradient-primary text-primary-foreground h-10 text-sm font-semibold">
+            {acting ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check className="w-4 h-4 mr-1" /> Sauver</>}
+          </Button>
+          <Button variant="ghost" onClick={() => { setEditing(false); setEditText(post.content); }} className="rounded-xl h-10">
+            Annuler
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`bg-card rounded-2xl p-5 shadow-card border animate-slide-up ${isNext ? "border-primary shadow-primary" : "border-border"}`}>
       <div className="flex items-center justify-between mb-3">
         <span className="text-xs font-medium text-muted-foreground flex items-center gap-1">
           <Clock className="w-3.5 h-3.5" /> {post.scheduledTime}
         </span>
-        {isNext && (
-          <span className="text-[10px] font-bold text-primary-foreground bg-primary px-2 py-0.5 rounded-full animate-pulse-glow">MAINTENANT</span>
-        )}
+        <div className="flex items-center gap-1">
+          {isNext && (
+            <span className="text-[10px] font-bold text-primary-foreground bg-primary px-2 py-0.5 rounded-full animate-pulse-glow">MAINTENANT</span>
+          )}
+          <button onClick={() => setEditing(true)} className="p-1.5 rounded-lg hover:bg-accent transition-colors">
+            <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+          </button>
+          <button onClick={handleDelete} disabled={acting} className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors">
+            <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
+          </button>
+        </div>
       </div>
       <p className="text-sm text-foreground leading-relaxed mb-4 whitespace-pre-wrap">{post.content}</p>
       <div className="flex gap-2">
