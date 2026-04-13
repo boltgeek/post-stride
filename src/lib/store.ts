@@ -167,6 +167,22 @@ export async function updatePostStats(postId: string, reactions: number, comment
   if (error) throw error;
 }
 
+export async function updatePostContent(postId: string, content: string) {
+  const { error } = await supabase
+    .from("posts")
+    .update({ content })
+    .eq("id", postId);
+  if (error) throw error;
+}
+
+export async function deletePost(postId: string) {
+  const { error } = await supabase
+    .from("posts")
+    .delete()
+    .eq("id", postId);
+  if (error) throw error;
+}
+
 export async function setPostsPerDay(userId: string, n: number) {
   const { error } = await supabase
     .from("user_stats")
