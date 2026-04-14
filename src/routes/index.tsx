@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
-import { Flame, Plus, ArrowRight, TrendingUp, Target, LogOut } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Flame, Plus, ArrowRight, TrendingUp, Target, LogOut, Calendar, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BottomNav } from "@/components/BottomNav";
 import { StreakBadge } from "@/components/StreakBadge";
@@ -14,6 +14,7 @@ import {
   getWeeklyStats,
   getLevelName,
   getRewardMessage,
+  type Post,
 } from "@/lib/store";
 
 export const Route = createFileRoute("/")({
@@ -30,6 +31,7 @@ function Dashboard() {
   const { user, loading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
   const { posts, streak, longestStreak, totalPoints, level, loading } = useAppData();
+  const [showUpcoming, setShowUpcoming] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -45,6 +47,7 @@ function Dashboard() {
     );
   }
 
+  const todayStr = new Date().toISOString().slice(0, 10);
   const todayPosts = getTodayPosts(posts);
   const nextPost = getNextPost(posts);
   const weekStats = getWeeklyStats(posts);
@@ -53,6 +56,26 @@ function Dashboard() {
   const progressToday = totalToday > 0 ? (publishedToday / totalToday) * 100 : 0;
   const reward = getRewardMessage(streak);
   const hasPosts = posts.length > 0;
+
+  // Upcoming posts (future, pending only)
+  const upcomingPosts = posts
+    .filter((p) => p.scheduledDate > todayStr && p.status === "pending")
+    .sort((a, b) => a.scheduledDate.localeCompare(b.scheduledDate) || a.scheduledTime.localeCompare(b.scheduledTime));
+
+  // Group upcoming by date
+  const upcomingByDate = upcomingPosts.reduce<Record<string, Post[]>>((acc, p) => {
+    if (!acc[p.scheduledDate]) acc[p.scheduledDate] = [];
+    acc[p.scheduledDate].push(p);
+    return acc;
+  }, {});
+
+  const formatDate = (dateStr: string) => {
+    const d = new Date(dateStr + "T00:00:00");
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    if (dateStr === tomorrow.toISOString().slice(0, 10)) return "Demain";
+    return d.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });
+  };
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -144,6 +167,42 @@ function Dashboard() {
                     <PostCard key={p.id} post={p} />
                   ))}
                 </div>
+              </div>
+            )}
+
+            {/* Upcoming posts section */}
+            {upcomingPosts.length > 0 && (
+              <div className="mt-5">
+                <button
+                  onClick={() => setShowUpcoming(!showUpcoming)}
+                  className="w-full flex items-center justify-between bg-card rounded-2xl p-4 shadow-card border border-border hover:shadow-card-hover transition-shadow"
+                >
+                  <div className="flex items-center gap-3">
+                    <Calendar className="w-5 h-5 text-primary" />
+                    <div className="text-left">
+                      <p className="text-sm font-semibold text-foreground">Posts à venir</p>
+                      <p className="text-[10px] text-muted-foreground">{upcomingPosts.length} post{upcomingPosts.length > 1 ? "s" : ""} planifié{upcomingPosts.length > 1 ? "s" : ""}</p>
+                    </div>
+                  </div>
+                  {showUpcoming ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+                </button>
+
+                {showUpcoming && (
+                  <div className="mt-3 space-y-4 animate-slide-up">
+                    {Object.entries(upcomingByDate).map(([date, datePosts]) => (
+                      <div key={date}>
+                        <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
+                          {formatDate(date)}
+                        </p>
+                        <div className="space-y-3">
+                          {datePosts.map((p) => (
+                            <PostCard key={p.id} post={p} />
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 

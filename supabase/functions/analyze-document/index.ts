@@ -33,6 +33,8 @@ Règles :
 - Garde le ton et le style du document original
 - Ajoute des emojis si le style du document s'y prête
 - Chaque post doit faire entre 50 et 500 mots
+- NE JAMAIS ajouter de hashtags (#). Aucun hashtag dans les posts. C'est interdit.
+- NE JAMAIS inventer de contenu qui n'est pas dans le document
 
 IMPORTANT : Réponds UNIQUEMENT avec un JSON valide, sans markdown, sans backticks.
 Format :
@@ -78,7 +80,6 @@ Format :
       return Response.json({ error: "Pas de réponse de l'IA" }, { status: 500, headers: corsHeaders });
     }
 
-    // Parse JSON from response (handle potential markdown wrapping)
     let parsed;
     try {
       const cleaned = content.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
@@ -86,6 +87,14 @@ Format :
     } catch {
       console.error("Failed to parse AI response:", content);
       return Response.json({ error: "Réponse IA invalide, réessaie" }, { status: 500, headers: corsHeaders });
+    }
+
+    // Strip any hashtags that slipped through
+    if (parsed.posts && Array.isArray(parsed.posts)) {
+      parsed.posts = parsed.posts.map((p: any) => ({
+        ...p,
+        content: p.content.replace(/#\w+/g, "").replace(/\s{2,}/g, " ").trim(),
+      }));
     }
 
     return Response.json(parsed, { headers: corsHeaders });
