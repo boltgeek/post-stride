@@ -8,6 +8,8 @@ import { ProgressRing } from "@/components/ProgressRing";
 import { PostCard } from "@/components/PostCard";
 import { useAuth } from "@/lib/auth";
 import { useAppData } from "@/hooks/use-app-data";
+import { useNotifications, useScheduleDailyReminders } from "@/hooks/use-notifications";
+import { NotificationToggle } from "@/components/NotificationToggle";
 import {
   getTodayPosts,
   getNextPost,
@@ -32,6 +34,8 @@ function Dashboard() {
   const navigate = useNavigate();
   const { posts, streak, longestStreak, totalPoints, level, loading } = useAppData();
   const [showUpcoming, setShowUpcoming] = useState(false);
+  const { enabled: notifEnabled } = useNotifications();
+  useScheduleDailyReminders(posts, notifEnabled);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -129,6 +133,8 @@ function Dashboard() {
                 <p className="text-base font-bold text-foreground">{reward}</p>
               </div>
             )}
+
+            <NotificationToggle />
 
             <div className="grid grid-cols-3 gap-2 mb-5">
               {[
