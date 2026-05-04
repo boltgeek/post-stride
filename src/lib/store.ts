@@ -138,6 +138,12 @@ export async function publishPost(postId: string) {
     newLevel = Math.floor(newStreak / 7) + 1;
   }
 
+  const userId = (await supabase.auth.getUser()).data.user!.id;
+  const { data: current } = await supabase
+    .from("user_stats")
+    .select("publish_count")
+    .eq("user_id", userId)
+    .maybeSingle();
   const { error: statsError } = await supabase
     .from("user_stats")
     .update({
@@ -146,8 +152,9 @@ export async function publishPost(postId: string) {
       total_points: stats.totalPoints + 10,
       level: newLevel,
       last_active_date: t,
+      publish_count: (current?.publish_count ?? 0) + 1,
     })
-    .eq("user_id", (await supabase.auth.getUser()).data.user!.id);
+    .eq("user_id", userId);
   if (statsError) throw statsError;
 }
 

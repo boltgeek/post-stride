@@ -1,34 +1,61 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { BarChart3, Heart, MessageCircle, TrendingUp, Trophy, Flame, Clock, CalendarDays, FileText } from "lucide-react";
+import { Trophy, Crown, Medal, Award } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
 import { useAuth } from "@/lib/auth";
-import { useAppData } from "@/hooks/use-app-data";
-import { getWeeklyStats, getLevelName, type Post } from "@/lib/store";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/analytics")({
   component: AnalyticsPage,
   head: () => ({
     meta: [
-      { title: "Statistiques — PostPilot" },
-      { name: "description", content: "Analyse tes performances" },
+      { title: "Classement — PostPilot" },
+      { name: "description", content: "Classement des vendeuses les plus actives" },
     ],
   }),
 });
 
+interface LeaderboardRow {
+  user_id: string;
+  display_name: string;
+  publish_count: number;
+  rank: number;
+  is_current_user: boolean;
+}
+
 function AnalyticsPage() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const { posts, streak, longestStreak, totalPoints, level, loading } = useAppData();
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      navigate({ to: "/login" });
-    }
+    if (!authLoading && !user) navigate({ to: "/login" });
   }, [authLoading, user, navigate]);
 
-  if (authLoading || loading || !user) {
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ["leaderboard"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc("get_leaderboard");
+      if (error) throw error;
+      return (data ?? []) as LeaderboardRow[];
+    },
+    enabled: !!user,
+    refetchInterval: 15000,
+  });
+
+  // Realtime: refetch on any user_stats change
+  useEffect(() => {
+    const channel = supabase
+      .channel("leaderboard-stats")
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "user_stats" }, () => refetch())
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "user_stats" }, () => refetch())
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [refetch]);
+
+  if (authLoading || isLoading || !user) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
@@ -36,193 +63,144 @@ function AnalyticsPage() {
     );
   }
 
-  const weekStats = getWeeklyStats(posts);
-  const publishedPosts = posts.filter((p: Post) => p.status === "published");
-  const pendingPosts = posts.filter((p: Post) => p.status === "pending");
-  const skippedPosts = posts.filter((p: Post) => p.status === "skipped");
+  const rows = data ?? [];
+  const top10 = rows.filter((r) => r.rank <= 10);
+  const top3 = top10.slice(0, 3);
+  const rest = top10.slice(3);
+  const me = rows.find((r) => r.is_current_user);
+  const myInTop10 = !!me && me.rank <= 10;
 
-  const publishedWithStats = publishedPosts
-    .filter((p: Post) => p.reactions !== undefined || p.comments !== undefined)
-    .sort((a: Post, b: Post) => a.scheduledDate.localeCompare(b.scheduledDate));
+  // Progression text
+  let progression = "";
+  if (me) {
+    if (me.rank === 1) progression = "🥇 Tu es n°1 du classement !";
+    else {
+      const ahead = top10.find((r) => r.rank === me.rank - 1);
+      if (ahead) {
+        const diff = ahead.publish_count - me.publish_count;
+        progression = `À ${diff} publication${diff > 1 ? "s" : ""} de la place ${ahead.rank}`;
+      }
+    }
+  }
 
-  const chartData = publishedWithStats.map((p: Post) => ({
-    date: new Date(p.scheduledDate + "T00:00:00").toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" }),
-    engagement: (p.reactions || 0) + (p.comments || 0),
-    reactions: p.reactions || 0,
-    comments: p.comments || 0,
-  }));
-
-  const topPosts = [...publishedWithStats]
-    .sort((a: Post, b: Post) => ((b.reactions || 0) + (b.comments || 0)) - ((a.reactions || 0) + (a.comments || 0)))
-    .slice(0, 3);
-
-  // Best posting time analysis
-  const timeStats: Record<string, { count: number; engagement: number }> = {};
-  publishedPosts.forEach((p) => {
-    const hour = p.scheduledTime.split(":")[0] + "h";
-    if (!timeStats[hour]) timeStats[hour] = { count: 0, engagement: 0 };
-    timeStats[hour].count++;
-    timeStats[hour].engagement += (p.reactions || 0) + (p.comments || 0);
-  });
-  const timeChartData = Object.entries(timeStats)
-    .map(([time, data]) => ({
-      time,
-      posts: data.count,
-      avgEngagement: data.count > 0 ? Math.round(data.engagement / data.count) : 0,
-    }))
-    .sort((a, b) => a.time.localeCompare(b.time));
-
-  // Completion rate
-  const totalProcessed = publishedPosts.length + skippedPosts.length;
-  const completionRate = totalProcessed > 0 ? Math.round((publishedPosts.length / totalProcessed) * 100) : 0;
-
-  // Average engagement
-  const totalEngagement = publishedPosts.reduce((s, p) => s + (p.reactions || 0) + (p.comments || 0), 0);
-  const avgEngagement = publishedPosts.length > 0 ? Math.round(totalEngagement / publishedPosts.length) : 0;
+  const podiumOrder = [top3[1], top3[0], top3[2]].filter(Boolean);
+  const heights = ["h-20", "h-28", "h-16"];
+  const medals = [
+    { icon: Medal, color: "text-muted-foreground", bg: "bg-muted-foreground/10" },
+    { icon: Crown, color: "text-warning", bg: "bg-warning/15" },
+    { icon: Award, color: "text-primary", bg: "bg-primary/10" },
+  ];
 
   return (
     <div className="min-h-screen bg-background pb-24">
       <div className="max-w-lg mx-auto px-4 pt-6">
-        <h1 className="text-xl font-bold text-foreground mb-6">Statistiques</h1>
-
-        {/* Key metrics */}
-        <div className="grid grid-cols-2 gap-3 mb-5">
-          {[
-            { label: "Total publiés", value: publishedPosts.length, icon: BarChart3, color: "text-primary" },
-            { label: "Streak actuel", value: streak, icon: Flame, color: "text-streak" },
-            { label: "Meilleur streak", value: longestStreak, icon: Trophy, color: "text-warning" },
-            { label: "Points", value: totalPoints, icon: TrendingUp, color: "text-success" },
-          ].map((card) => (
-            <div key={card.label} className="bg-card rounded-2xl p-4 shadow-card border border-border">
-              <card.icon className={`w-5 h-5 ${card.color} mb-2`} />
-              <p className="text-2xl font-bold text-foreground">{card.value}</p>
-              <p className="text-[10px] text-muted-foreground">{card.label}</p>
-            </div>
-          ))}
+        <div className="flex items-center gap-2 mb-1">
+          <Trophy className="w-5 h-5 text-warning" />
+          <h1 className="text-xl font-bold text-foreground">Classement</h1>
         </div>
+        <p className="text-xs text-muted-foreground mb-6">
+          Top 10 des vendeuses les plus actives. Chaque clic sur « Publier » = +1 point.
+        </p>
 
-        {/* Quick stats row */}
-        <div className="grid grid-cols-3 gap-2 mb-5">
-          <div className="bg-card rounded-xl p-3 shadow-card border border-border text-center">
-            <p className="text-lg font-bold text-foreground">{completionRate}%</p>
-            <p className="text-[10px] text-muted-foreground">Taux de publication</p>
-          </div>
-          <div className="bg-card rounded-xl p-3 shadow-card border border-border text-center">
-            <p className="text-lg font-bold text-foreground">{avgEngagement}</p>
-            <p className="text-[10px] text-muted-foreground">Engagement moy.</p>
-          </div>
-          <div className="bg-card rounded-xl p-3 shadow-card border border-border text-center">
-            <p className="text-lg font-bold text-foreground">{pendingPosts.length}</p>
-            <p className="text-[10px] text-muted-foreground">En attente</p>
-          </div>
-        </div>
-
-        {/* Level */}
-        <div className="bg-card rounded-2xl p-4 shadow-card border border-border mb-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-semibold text-foreground">Niveau {level}</p>
-              <p className="text-xs text-muted-foreground">{getLevelName(level)}</p>
-            </div>
-            <div className="flex-1 mx-4">
-              <div className="h-2 bg-muted rounded-full overflow-hidden">
-                <div className="h-full gradient-primary rounded-full transition-all duration-500" style={{ width: `${((streak % 7) / 7) * 100}%` }} />
+        {/* Personal card */}
+        {me && (
+          <div className="bg-card rounded-2xl p-4 shadow-card border border-border mb-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">Ta position</p>
+                <p className="text-2xl font-bold text-foreground">
+                  {me.rank === 1 ? "1ère" : `${me.rank}e`}
+                </p>
+                {progression && (
+                  <p className="text-xs text-primary mt-1">{progression}</p>
+                )}
               </div>
-              <p className="text-[9px] text-muted-foreground mt-1 text-right">{7 - (streak % 7)} jours avant niv. {level + 1}</p>
+              <div className="text-right">
+                <p className="text-xs text-muted-foreground">Tes publications</p>
+                <p className="text-2xl font-bold text-foreground">{me.publish_count}</p>
+              </div>
             </div>
-          </div>
-        </div>
-
-        {/* Engagement chart */}
-        {chartData.length > 0 && (
-          <div className="bg-card rounded-2xl p-4 shadow-card border border-border mb-5">
-            <p className="text-sm font-semibold text-foreground mb-4">📈 Engagement par post</p>
-            <ResponsiveContainer width="100%" height={180}>
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                <XAxis dataKey="date" tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }} />
-                <YAxis tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }} />
-                <Tooltip contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: "12px", fontSize: "12px" }} />
-                <Line type="monotone" dataKey="reactions" stroke="var(--color-destructive)" strokeWidth={2} dot={{ fill: "var(--color-destructive)", r: 3 }} name="Réactions" />
-                <Line type="monotone" dataKey="comments" stroke="var(--color-primary)" strokeWidth={2} dot={{ fill: "var(--color-primary)", r: 3 }} name="Commentaires" />
-              </LineChart>
-            </ResponsiveContainer>
           </div>
         )}
 
-        {/* Best posting times */}
-        {timeChartData.length > 1 && (
+        {/* Podium */}
+        {top3.length > 0 && (
           <div className="bg-card rounded-2xl p-4 shadow-card border border-border mb-5">
-            <p className="text-sm font-semibold text-foreground mb-1 flex items-center gap-2">
-              <Clock className="w-4 h-4 text-primary" /> Meilleurs horaires
-            </p>
-            <p className="text-[10px] text-muted-foreground mb-4">Engagement moyen par créneau</p>
-            <ResponsiveContainer width="100%" height={140}>
-              <BarChart data={timeChartData}>
-                <XAxis dataKey="time" tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }} />
-                <YAxis tick={{ fontSize: 10, fill: "var(--color-muted-foreground)" }} />
-                <Tooltip contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: "12px", fontSize: "12px" }} />
-                <Bar dataKey="avgEngagement" fill="var(--color-primary)" radius={[6, 6, 0, 0]} name="Engagement moy." />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        )}
-
-        {/* This week */}
-        <div className="bg-card rounded-2xl p-4 shadow-card border border-border mb-5">
-          <p className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-            <CalendarDays className="w-4 h-4 text-primary" /> Cette semaine
-          </p>
-          <div className="grid grid-cols-3 gap-3">
-            <div className="text-center">
-              <p className="text-lg font-bold text-foreground">{weekStats.published}</p>
-              <p className="text-[10px] text-muted-foreground">Publiés</p>
-            </div>
-            <div className="text-center">
-              <p className="text-lg font-bold text-foreground flex items-center justify-center gap-1">
-                <Heart className="w-3.5 h-3.5 text-destructive" /> {weekStats.totalReactions}
-              </p>
-              <p className="text-[10px] text-muted-foreground">Réactions</p>
-            </div>
-            <div className="text-center">
-              <p className="text-lg font-bold text-foreground flex items-center justify-center gap-1">
-                <MessageCircle className="w-3.5 h-3.5 text-primary" /> {weekStats.totalComments}
-              </p>
-              <p className="text-[10px] text-muted-foreground">Commentaires</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Top posts */}
-        {topPosts.length > 0 && (
-          <div className="mb-4">
-            <p className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-              <Trophy className="w-4 h-4 text-warning" /> Meilleurs posts
-            </p>
-            <div className="space-y-2">
-              {topPosts.map((post: Post, i: number) => (
-                <div key={post.id} className="bg-card rounded-xl p-3 shadow-card border border-border">
-                  <div className="flex items-start gap-2">
-                    <span className="text-lg">{i === 0 ? "🥇" : i === 1 ? "🥈" : "🥉"}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-foreground line-clamp-2">{post.content}</p>
-                      <div className="flex gap-3 mt-1.5 text-[10px] text-muted-foreground">
-                        <span className="flex items-center gap-0.5"><Heart className="w-3 h-3" /> {post.reactions || 0}</span>
-                        <span className="flex items-center gap-0.5"><MessageCircle className="w-3 h-3" /> {post.comments || 0}</span>
-                      </div>
+            <p className="text-sm font-semibold text-foreground mb-4 text-center">🏆 Top 3</p>
+            <div className="flex items-end justify-center gap-3">
+              {podiumOrder.map((row, i) => {
+                if (!row) return null;
+                const realIdx = row.rank - 1; // 0,1,2
+                const M = medals[realIdx];
+                return (
+                  <div key={row.user_id} className="flex-1 flex flex-col items-center">
+                    <div className={`w-12 h-12 rounded-full ${M.bg} flex items-center justify-center mb-2`}>
+                      <M.icon className={`w-6 h-6 ${M.color}`} />
+                    </div>
+                    <p className="text-xs font-semibold text-foreground truncate max-w-full text-center">
+                      {row.display_name}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">{row.publish_count} pub.</p>
+                    <div className={`${heights[i]} w-full gradient-primary rounded-t-lg mt-2 flex items-start justify-center pt-1`}>
+                      <span className="text-white text-sm font-bold">{row.rank}</span>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
 
-        {publishedPosts.length === 0 && (
+        {/* Rest of top 10 */}
+        {rest.length > 0 && (
+          <div className="space-y-2 mb-4">
+            {rest.map((row) => (
+              <div
+                key={row.user_id}
+                className={`rounded-xl p-3 shadow-card border flex items-center gap-3 ${
+                  row.is_current_user
+                    ? "bg-primary/5 border-primary"
+                    : "bg-card border-border"
+                }`}
+              >
+                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                  <span className="text-sm font-bold text-foreground">{row.rank}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">
+                    {row.display_name}
+                    {row.is_current_user && <span className="text-xs text-primary ml-1">(toi)</span>}
+                  </p>
+                </div>
+                <p className="text-sm font-bold text-foreground">{row.publish_count}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* If user not in top 10, show separator + their row */}
+        {me && !myInTop10 && (
+          <>
+            <p className="text-center text-muted-foreground text-xs my-3">• • •</p>
+            <div className="rounded-xl p-3 shadow-card border bg-primary/5 border-primary flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                <span className="text-sm font-bold text-white">{me.rank}</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">
+                  {me.display_name} <span className="text-xs text-primary ml-1">(toi)</span>
+                </p>
+              </div>
+              <p className="text-sm font-bold text-foreground">{me.publish_count}</p>
+            </div>
+          </>
+        )}
+
+        {rows.length === 0 && (
           <div className="text-center py-12 text-muted-foreground">
-            <BarChart3 className="w-10 h-10 mx-auto mb-3 opacity-30" />
-            <p className="text-sm">Pas encore de données</p>
-            <p className="text-xs mt-1">Publie tes premiers posts pour voir tes stats</p>
+            <Trophy className="w-10 h-10 mx-auto mb-3 opacity-30" />
+            <p className="text-sm">Pas encore de classement</p>
+            <p className="text-xs mt-1">Publie ton premier post pour entrer dans le top !</p>
           </div>
         )}
       </div>
