@@ -1,17 +1,30 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Check, X, Clock } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, X, Clock, Calendar as CalendarIcon, ChevronDown, ChevronUp, ArrowRight, Upload, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { BottomNav } from "@/components/BottomNav";
+import { StreakBadge } from "@/components/StreakBadge";
+import { ProgressRing } from "@/components/ProgressRing";
+import { PostCard } from "@/components/PostCard";
+import { NotificationToggle } from "@/components/NotificationToggle";
 import { useAuth } from "@/lib/auth";
 import { useAppData } from "@/hooks/use-app-data";
-import type { Post } from "@/lib/store";
+import { useNotifications, useScheduleDailyReminders } from "@/hooks/use-notifications";
+import {
+  getTodayPosts,
+  getNextPost,
+  getWeeklyStats,
+  getLevelName,
+  getRewardMessage,
+  type Post,
+} from "@/lib/store";
 
 export const Route = createFileRoute("/calendar")({
   component: CalendarPage,
   head: () => ({
     meta: [
       { title: "Calendrier — PostPilot" },
-      { name: "description", content: "Ton calendrier éditorial" },
+      { name: "description", content: "Ton calendrier éditorial : publie tes posts du jour" },
     ],
   }),
 });
@@ -19,8 +32,12 @@ export const Route = createFileRoute("/calendar")({
 function CalendarPage() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const { posts, loading } = useAppData();
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10));
+  const { posts, streak, level, totalPoints, loading } = useAppData();
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const [selectedDate, setSelectedDate] = useState(todayStr);
+  const [showUpcoming, setShowUpcoming] = useState(false);
+  const { enabled: notifEnabled } = useNotifications();
+  useScheduleDailyReminders(posts, notifEnabled);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -36,51 +53,108 @@ function CalendarPage() {
     );
   }
 
+  const hasPosts = posts.length > 0;
+  const todayPosts = getTodayPosts(posts);
+  const nextPost = getNextPost(posts);
+  const weekStats = getWeeklyStats(posts);
+  const publishedToday = todayPosts.filter((p) => p.status === "published").length;
+  const totalToday = todayPosts.length;
+  const progressToday = totalToday > 0 ? (publishedToday / totalToday) * 100 : 0;
+  const reward = getRewardMessage(streak);
+
   const dates = [...new Set(posts.map((p: Post) => p.scheduledDate))].sort();
   const selectedPosts = posts
     .filter((p: Post) => p.scheduledDate === selectedDate)
     .sort((a: Post, b: Post) => a.scheduledTime.localeCompare(b.scheduledTime));
-
   const currentIdx = dates.indexOf(selectedDate);
+  const isToday = selectedDate === todayStr;
+
+  const upcomingPosts = posts
+    .filter((p) => p.scheduledDate > todayStr && p.status === "pending")
+    .sort((a, b) => a.scheduledDate.localeCompare(b.scheduledDate) || a.scheduledTime.localeCompare(b.scheduledTime));
+
+  const upcomingByDate = upcomingPosts.reduce<Record<string, Post[]>>((acc, p) => {
+    if (!acc[p.scheduledDate]) acc[p.scheduledDate] = [];
+    acc[p.scheduledDate].push(p);
+    return acc;
+  }, {});
 
   const goTo = (dir: -1 | 1) => {
     const newIdx = currentIdx + dir;
-    if (newIdx >= 0 && newIdx < dates.length) {
-      setSelectedDate(dates[newIdx]);
-    }
+    if (newIdx >= 0 && newIdx < dates.length) setSelectedDate(dates[newIdx]);
   };
 
   const formatDate = (d: string) => {
-    const date = new Date(d + "T00:00:00");
-    const today = new Date().toISOString().slice(0, 10);
-    if (d === today) return "Aujourd'hui";
-    return date.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });
-  };
-
-  const statusIcon = (post: Post) => {
-    if (post.status === "published") return <Check className="w-3.5 h-3.5 text-success" />;
-    if (post.status === "skipped") return <X className="w-3.5 h-3.5 text-destructive" />;
-    return <Clock className="w-3.5 h-3.5 text-muted-foreground" />;
+    if (d === todayStr) return "Aujourd'hui";
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    if (d === tomorrow.toISOString().slice(0, 10)) return "Demain";
+    return new Date(d + "T00:00:00").toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });
   };
 
   return (
     <div className="min-h-screen bg-background pb-24">
       <div className="max-w-lg mx-auto px-4 pt-6">
-        <h1 className="text-xl font-bold text-foreground mb-6">Calendrier</h1>
+        <header className="mb-6">
+          <h1 className="text-xl font-bold text-foreground">Calendrier</h1>
+          <p className="text-xs text-muted-foreground">Ton espace pour publier chaque jour</p>
+        </header>
 
-        {dates.length === 0 ? (
-          <div className="text-center py-20 text-muted-foreground">
-            <p className="text-sm">Aucun contenu planifié</p>
-            <p className="text-xs mt-1">Importe ton contenu d'abord</p>
+        {!hasPosts ? (
+          <div className="flex flex-col items-center justify-center min-h-[60vh] text-center animate-slide-up">
+            <div className="w-20 h-20 rounded-full gradient-primary flex items-center justify-center mb-6 shadow-primary">
+              <CalendarIcon className="w-10 h-10 text-primary-foreground" />
+            </div>
+            <h2 className="text-lg font-bold text-foreground mb-2">Aucun contenu planifié</h2>
+            <p className="text-sm text-muted-foreground mb-8 max-w-xs">
+              Importe d'abord tes posts pré-écrits, puis reviens ici pour les publier au quotidien.
+            </p>
+            <Link to="/upload">
+              <Button className="rounded-xl gradient-primary text-primary-foreground shadow-primary h-14 px-8 text-base font-semibold">
+                <Plus className="w-5 h-5 mr-2" /> Importer mon contenu
+              </Button>
+            </Link>
           </div>
         ) : (
           <>
-            <div className="flex items-center justify-between bg-card rounded-2xl p-3 shadow-card border border-border mb-5">
-              <button onClick={() => goTo(-1)} disabled={currentIdx <= 0} className="p-2 rounded-xl hover:bg-accent disabled:opacity-30 transition-all">
+            {/* Streak + progress */}
+            <div className="bg-card rounded-2xl p-4 shadow-card border border-border mb-4 animate-slide-up">
+              <div className="flex items-center justify-between">
+                <StreakBadge streak={streak} level={level} levelName={getLevelName(level)} />
+                <ProgressRing progress={progressToday} size={64} label={`${publishedToday}/${totalToday}`} sublabel="aujourd'hui" />
+              </div>
+            </div>
+
+            {reward && (
+              <div className="bg-card rounded-2xl p-4 shadow-card border-2 border-streak mb-4 animate-confetti-pop text-center">
+                <p className="text-base font-bold text-foreground">{reward}</p>
+              </div>
+            )}
+
+            <NotificationToggle />
+
+            {/* Week stats */}
+            <div className="grid grid-cols-3 gap-2 mb-5">
+              {[
+                { label: "Publiés", value: weekStats.published, icon: "✅" },
+                { label: "Réactions", value: weekStats.totalReactions, icon: "❤️" },
+                { label: "Jours actifs", value: `${weekStats.activeDays}/7`, icon: "📅" },
+              ].map((s) => (
+                <div key={s.label} className="bg-card rounded-xl p-3 shadow-card border border-border text-center">
+                  <p className="text-lg">{s.icon}</p>
+                  <p className="text-base font-bold text-foreground">{s.value}</p>
+                  <p className="text-[10px] text-muted-foreground">{s.label}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Date selector */}
+            <div className="flex items-center justify-between bg-card rounded-2xl p-3 shadow-card border border-border mb-4">
+              <button onClick={() => goTo(-1)} disabled={currentIdx <= 0} className="p-2 rounded-xl hover:bg-accent disabled:opacity-30 transition-all" aria-label="Jour précédent">
                 <ChevronLeft className="w-5 h-5 text-foreground" />
               </button>
               <span className="text-sm font-semibold text-foreground capitalize">{formatDate(selectedDate)}</span>
-              <button onClick={() => goTo(1)} disabled={currentIdx >= dates.length - 1} className="p-2 rounded-xl hover:bg-accent disabled:opacity-30 transition-all">
+              <button onClick={() => goTo(1)} disabled={currentIdx >= dates.length - 1} className="p-2 rounded-xl hover:bg-accent disabled:opacity-30 transition-all" aria-label="Jour suivant">
                 <ChevronRight className="w-5 h-5 text-foreground" />
               </button>
             </div>
@@ -89,7 +163,7 @@ function CalendarPage() {
               {dates.map((d) => {
                 const dayPosts = posts.filter((p: Post) => p.scheduledDate === d);
                 const allDone = dayPosts.every((p: Post) => p.status !== "pending");
-                const isToday = d === new Date().toISOString().slice(0, 10);
+                const isTodayBtn = d === todayStr;
                 return (
                   <button
                     key={d}
@@ -103,30 +177,101 @@ function CalendarPage() {
                     </span>
                     <span className="text-xs font-bold">{new Date(d + "T00:00:00").getDate()}</span>
                     {allDone && dayPosts.length > 0 && <div className="w-1.5 h-1.5 rounded-full bg-success" />}
-                    {isToday && d !== selectedDate && <div className="w-1.5 h-1.5 rounded-full bg-primary" />}
+                    {isTodayBtn && d !== selectedDate && <div className="w-1.5 h-1.5 rounded-full bg-primary" />}
                   </button>
                 );
               })}
             </div>
 
-            <div className="space-y-2">
-              {selectedPosts.map((post: Post) => (
-                <div key={post.id} className="bg-card rounded-xl p-4 shadow-card border border-border animate-slide-up">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-6 h-6 rounded-full bg-accent flex items-center justify-center">{statusIcon(post)}</div>
-                    <span className="text-xs text-muted-foreground">{post.scheduledTime}</span>
-                    <span className={`text-[10px] ml-auto font-medium ${
-                      post.status === "published" ? "text-success" : post.status === "skipped" ? "text-destructive" : "text-muted-foreground"
-                    }`}>
-                      {post.status === "published" ? "Publié" : post.status === "skipped" ? "Ignoré" : "En attente"}
-                    </span>
+            {/* Selected day posts — interactive on today, read-only on others */}
+            {isToday ? (
+              <>
+                {nextPost ? (
+                  <div className="mb-3">
+                    <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                      <ArrowRight className="w-4 h-4 text-primary" /> Prochain post
+                    </h2>
+                    <PostCard post={nextPost} isNext />
                   </div>
-                  <p className="text-sm text-foreground line-clamp-3">{post.content}</p>
+                ) : totalToday > 0 ? (
+                  <div className="bg-card rounded-2xl p-6 shadow-card border border-border text-center mb-4 animate-slide-up">
+                    <span className="text-3xl mb-2 block">🎉</span>
+                    <p className="text-sm font-semibold text-foreground">Tout est fait pour aujourd'hui !</p>
+                    <p className="text-xs text-muted-foreground mt-1">Reviens demain</p>
+                  </div>
+                ) : null}
+
+                {todayPosts.filter((p) => p.id !== nextPost?.id).length > 0 && (
+                  <div className="mt-4">
+                    <h2 className="text-sm font-semibold text-foreground mb-3">Autres posts du jour</h2>
+                    <div className="space-y-3">
+                      {todayPosts.filter((p) => p.id !== nextPost?.id).map((p) => (
+                        <PostCard key={p.id} post={p} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="space-y-3">
+                {selectedPosts.length === 0 ? (
+                  <p className="text-center text-sm text-muted-foreground py-8">Aucun post ce jour</p>
+                ) : (
+                  selectedPosts.map((p) => <PostCard key={p.id} post={p} />)
+                )}
+              </div>
+            )}
+
+            {/* Upcoming */}
+            {upcomingPosts.length > 0 && (
+              <div className="mt-5">
+                <button
+                  onClick={() => setShowUpcoming(!showUpcoming)}
+                  className="w-full flex items-center justify-between bg-card rounded-2xl p-4 shadow-card border border-border hover:shadow-card-hover transition-shadow"
+                >
+                  <div className="flex items-center gap-3">
+                    <CalendarIcon className="w-5 h-5 text-primary" />
+                    <div className="text-left">
+                      <p className="text-sm font-semibold text-foreground">Posts à venir</p>
+                      <p className="text-[10px] text-muted-foreground">{upcomingPosts.length} post{upcomingPosts.length > 1 ? "s" : ""} planifié{upcomingPosts.length > 1 ? "s" : ""}</p>
+                    </div>
+                  </div>
+                  {showUpcoming ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+                </button>
+
+                {showUpcoming && (
+                  <div className="mt-3 space-y-4 animate-slide-up">
+                    {Object.entries(upcomingByDate).map(([date, datePosts]) => (
+                      <div key={date}>
+                        <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
+                          {formatDate(date)}
+                        </p>
+                        <div className="space-y-3">
+                          {datePosts.map((p) => (
+                            <PostCard key={p.id} post={p} />
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Add more content */}
+            <Link to="/upload" className="block mt-5">
+              <div className="bg-card rounded-2xl p-4 shadow-card border border-dashed border-border flex items-center justify-between hover:shadow-card-hover transition-shadow">
+                <div className="flex items-center gap-3">
+                  <Upload className="w-5 h-5 text-primary" />
+                  <p className="text-sm font-semibold text-foreground">Ajouter du contenu</p>
                 </div>
-              ))}
-            </div>
+                <ArrowRight className="w-4 h-4 text-muted-foreground" />
+              </div>
+            </Link>
           </>
         )}
+        {/* totalPoints kept available via header on home; suppress unused var warning */}
+        <span className="hidden">{totalPoints}</span>
       </div>
       <BottomNav />
     </div>

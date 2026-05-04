@@ -1,26 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { Flame, Plus, ArrowRight, TrendingUp, Target, LogOut, Calendar, ChevronDown, ChevronUp } from "lucide-react";
+import { useEffect } from "react";
+import { Upload, Calendar, CheckCircle2, BarChart3, Sparkles, ArrowRight, LogOut, Flame } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BottomNav } from "@/components/BottomNav";
-import { StreakBadge } from "@/components/StreakBadge";
-import { ProgressRing } from "@/components/ProgressRing";
-import { PostCard } from "@/components/PostCard";
 import { useAuth } from "@/lib/auth";
 import { useAppData } from "@/hooks/use-app-data";
-import { useNotifications, useScheduleDailyReminders } from "@/hooks/use-notifications";
-import { NotificationToggle } from "@/components/NotificationToggle";
-import {
-  getTodayPosts,
-  getNextPost,
-  getWeeklyStats,
-  getLevelName,
-  getRewardMessage,
-  type Post,
-} from "@/lib/store";
 
 export const Route = createFileRoute("/")({
-  component: Dashboard,
+  component: Home,
   head: () => ({
     meta: [
       { title: "PostPilot — Ton assistant contenu" },
@@ -29,13 +16,33 @@ export const Route = createFileRoute("/")({
   }),
 });
 
-function Dashboard() {
+const steps = [
+  {
+    icon: Upload,
+    title: "Importe ton contenu",
+    desc: "Ajoute tes posts pré-écrits (texte, Word, PDF). PostPilot les organise pour toi.",
+  },
+  {
+    icon: Calendar,
+    title: "Suis ton calendrier",
+    desc: "Chaque jour, retrouve tes posts à publier dans la page Calendrier.",
+  },
+  {
+    icon: CheckCircle2,
+    title: "Copie et publie",
+    desc: "Un clic pour copier ton post, colle-le sur Facebook, marque comme publié.",
+  },
+  {
+    icon: BarChart3,
+    title: "Suis tes stats",
+    desc: "Note les réactions et commentaires pour voir ce qui marche le mieux.",
+  },
+];
+
+function Home() {
   const { user, loading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
-  const { posts, streak, longestStreak, totalPoints, level, loading } = useAppData();
-  const [showUpcoming, setShowUpcoming] = useState(false);
-  const { enabled: notifEnabled } = useNotifications();
-  useScheduleDailyReminders(posts, notifEnabled);
+  const { posts, totalPoints, loading } = useAppData();
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -51,181 +58,143 @@ function Dashboard() {
     );
   }
 
-  const todayStr = new Date().toISOString().slice(0, 10);
-  const todayPosts = getTodayPosts(posts);
-  const nextPost = getNextPost(posts);
-  const weekStats = getWeeklyStats(posts);
-  const publishedToday = todayPosts.filter((p) => p.status === "published").length;
-  const totalToday = todayPosts.length;
-  const progressToday = totalToday > 0 ? (publishedToday / totalToday) * 100 : 0;
-  const reward = getRewardMessage(streak);
   const hasPosts = posts.length > 0;
-
-  // Upcoming posts (future, pending only)
-  const upcomingPosts = posts
-    .filter((p) => p.scheduledDate > todayStr && p.status === "pending")
-    .sort((a, b) => a.scheduledDate.localeCompare(b.scheduledDate) || a.scheduledTime.localeCompare(b.scheduledTime));
-
-  // Group upcoming by date
-  const upcomingByDate = upcomingPosts.reduce<Record<string, Post[]>>((acc, p) => {
-    if (!acc[p.scheduledDate]) acc[p.scheduledDate] = [];
-    acc[p.scheduledDate].push(p);
-    return acc;
-  }, {});
-
-  const formatDate = (dateStr: string) => {
-    const d = new Date(dateStr + "T00:00:00");
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    if (dateStr === tomorrow.toISOString().slice(0, 10)) return "Demain";
-    return d.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });
-  };
 
   return (
     <div className="min-h-screen bg-background pb-24">
       <div className="max-w-lg mx-auto px-4 pt-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-xl font-bold text-foreground">PostPilot</h1>
             <p className="text-xs text-muted-foreground">Ton assistant contenu</p>
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 bg-accent rounded-full px-3 py-1.5">
-              <Flame className="w-4 h-4 text-primary" />
-              <span className="text-sm font-bold text-foreground">{totalPoints}</span>
-            </div>
-            <button onClick={signOut} className="p-2 rounded-xl hover:bg-accent transition-colors">
+            {hasPosts && (
+              <div className="flex items-center gap-1 bg-accent rounded-full px-3 py-1.5">
+                <Flame className="w-4 h-4 text-primary" />
+                <span className="text-sm font-bold text-foreground">{totalPoints}</span>
+              </div>
+            )}
+            <button onClick={signOut} className="p-2 rounded-xl hover:bg-accent transition-colors" aria-label="Se déconnecter">
               <LogOut className="w-4 h-4 text-muted-foreground" />
             </button>
           </div>
         </div>
 
-        {!hasPosts ? (
-          <div className="flex flex-col items-center justify-center min-h-[60vh] text-center animate-slide-up">
-            <div className="w-20 h-20 rounded-full gradient-primary flex items-center justify-center mb-6 shadow-primary">
-              <Target className="w-10 h-10 text-primary-foreground" />
-            </div>
-            <h2 className="text-lg font-bold text-foreground mb-2">
-              Prête à poster ?
-            </h2>
-            <p className="text-sm text-muted-foreground mb-8 max-w-xs">
-              Importe ton contenu et PostPilot te dit quoi poster, quand poster.
-              Tu exécutes, c'est tout.
-            </p>
-            <Link to="/upload">
-              <Button className="rounded-xl gradient-primary text-primary-foreground shadow-primary h-14 px-8 text-base font-semibold">
-                <Plus className="w-5 h-5 mr-2" /> Importer mon contenu
-              </Button>
-            </Link>
+        {/* Hero */}
+        <section className="text-center mb-8 animate-slide-up">
+          <div className="inline-flex w-16 h-16 rounded-2xl gradient-primary items-center justify-center mb-4 shadow-primary">
+            <Sparkles className="w-8 h-8 text-primary-foreground" />
           </div>
-        ) : (
-          <>
-            <div className="bg-card rounded-2xl p-4 shadow-card border border-border mb-4 animate-slide-up">
-              <div className="flex items-center justify-between">
-                <StreakBadge streak={streak} level={level} levelName={getLevelName(level)} />
-                <ProgressRing progress={progressToday} size={64} label={`${publishedToday}/${totalToday}`} sublabel="aujourd'hui" />
-              </div>
-            </div>
+          <h2 className="text-2xl font-bold text-foreground mb-2 leading-tight">
+            Poste chaque jour, sans réfléchir
+          </h2>
+          <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+            PostPilot t'aide à publier ton contenu Facebook au bon moment, garder ta régularité et faire grandir tes ventes.
+          </p>
+        </section>
 
-            {reward && (
-              <div className="bg-card rounded-2xl p-4 shadow-card border-2 border-streak mb-4 animate-confetti-pop text-center">
-                <p className="text-base font-bold text-foreground">{reward}</p>
-              </div>
+        {/* Main CTA */}
+        <Link to={hasPosts ? "/calendar" : "/upload"} className="block mb-8">
+          <Button className="w-full rounded-xl gradient-primary text-primary-foreground shadow-primary h-14 text-base font-semibold">
+            {hasPosts ? (
+              <>
+                <Calendar className="w-5 h-5 mr-2" />
+                Aller à mon calendrier
+              </>
+            ) : (
+              <>
+                <Upload className="w-5 h-5 mr-2" />
+                Commencer — Importer mon contenu
+              </>
             )}
+          </Button>
+        </Link>
 
-            <NotificationToggle />
+        {/* How it works */}
+        <section className="mb-6">
+          <h3 className="text-sm font-bold text-foreground mb-1 uppercase tracking-wide">
+            Comment ça marche
+          </h3>
+          <p className="text-xs text-muted-foreground mb-4">4 étapes simples pour démarrer</p>
 
-            <div className="grid grid-cols-3 gap-2 mb-5">
-              {[
-                { label: "Publiés", value: weekStats.published, icon: "✅" },
-                { label: "Réactions", value: weekStats.totalReactions, icon: "❤️" },
-                { label: "Jours actifs", value: `${weekStats.activeDays}/7`, icon: "📅" },
-              ].map((s) => (
-                <div key={s.label} className="bg-card rounded-xl p-3 shadow-card border border-border text-center">
-                  <p className="text-lg">{s.icon}</p>
-                  <p className="text-base font-bold text-foreground">{s.value}</p>
-                  <p className="text-[10px] text-muted-foreground">{s.label}</p>
-                </div>
-              ))}
-            </div>
-
-            {nextPost ? (
-              <div className="mb-3">
-                <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                  <ArrowRight className="w-4 h-4 text-primary" /> Prochain post
-                </h2>
-                <PostCard post={nextPost} isNext />
-              </div>
-            ) : totalToday > 0 ? (
-              <div className="bg-card rounded-2xl p-6 shadow-card border border-border text-center mb-4 animate-slide-up">
-                <span className="text-3xl mb-2 block">🎉</span>
-                <p className="text-sm font-semibold text-foreground">Tout est fait pour aujourd'hui !</p>
-                <p className="text-xs text-muted-foreground mt-1">Reviens demain</p>
-              </div>
-            ) : null}
-
-            {todayPosts.filter((p) => p.id !== nextPost?.id).length > 0 && (
-              <div className="mt-4">
-                <h2 className="text-sm font-semibold text-foreground mb-3">Autres posts du jour</h2>
-                <div className="space-y-3">
-                  {todayPosts.filter((p) => p.id !== nextPost?.id).map((p) => (
-                    <PostCard key={p.id} post={p} />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Upcoming posts section */}
-            {upcomingPosts.length > 0 && (
-              <div className="mt-5">
-                <button
-                  onClick={() => setShowUpcoming(!showUpcoming)}
-                  className="w-full flex items-center justify-between bg-card rounded-2xl p-4 shadow-card border border-border hover:shadow-card-hover transition-shadow"
+          <div className="space-y-3">
+            {steps.map((step, i) => {
+              const Icon = step.icon;
+              return (
+                <div
+                  key={step.title}
+                  className="bg-card rounded-2xl p-4 shadow-card border border-border flex gap-3 items-start animate-slide-up"
                 >
-                  <div className="flex items-center gap-3">
-                    <Calendar className="w-5 h-5 text-primary" />
-                    <div className="text-left">
-                      <p className="text-sm font-semibold text-foreground">Posts à venir</p>
-                      <p className="text-[10px] text-muted-foreground">{upcomingPosts.length} post{upcomingPosts.length > 1 ? "s" : ""} planifié{upcomingPosts.length > 1 ? "s" : ""}</p>
+                  <div className="flex-shrink-0 relative">
+                    <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center">
+                      <Icon className="w-5 h-5 text-primary" />
                     </div>
+                    <span className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center shadow-primary">
+                      {i + 1}
+                    </span>
                   </div>
-                  {showUpcoming ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
-                </button>
-
-                {showUpcoming && (
-                  <div className="mt-3 space-y-4 animate-slide-up">
-                    {Object.entries(upcomingByDate).map(([date, datePosts]) => (
-                      <div key={date}>
-                        <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
-                          {formatDate(date)}
-                        </p>
-                        <div className="space-y-3">
-                          {datePosts.map((p) => (
-                            <PostCard key={p.id} post={p} />
-                          ))}
-                        </div>
-                      </div>
-                    ))}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground mb-0.5">{step.title}</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{step.desc}</p>
                   </div>
-                )}
-              </div>
-            )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
 
-            <Link to="/analytics" className="block mt-5 mb-4">
+        {/* Quick links */}
+        <section className="mt-6">
+          <h3 className="text-sm font-bold text-foreground mb-3 uppercase tracking-wide">
+            {hasPosts ? "Continuer" : "Quoi faire en premier"}
+          </h3>
+          <div className="space-y-2">
+            <Link to="/upload" className="block">
               <div className="bg-card rounded-2xl p-4 shadow-card border border-border flex items-center justify-between hover:shadow-card-hover transition-shadow">
                 <div className="flex items-center gap-3">
-                  <TrendingUp className="w-5 h-5 text-primary" />
+                  <Upload className="w-5 h-5 text-primary" />
                   <div>
-                    <p className="text-sm font-semibold text-foreground">Voir les statistiques</p>
-                    <p className="text-[10px] text-muted-foreground">Découvre ce qui marche</p>
+                    <p className="text-sm font-semibold text-foreground">Importer du contenu</p>
+                    <p className="text-[11px] text-muted-foreground">Ajoute tes posts pré-écrits</p>
                   </div>
                 </div>
                 <ArrowRight className="w-4 h-4 text-muted-foreground" />
               </div>
             </Link>
-          </>
-        )}
+
+            {hasPosts && (
+              <>
+                <Link to="/calendar" className="block">
+                  <div className="bg-card rounded-2xl p-4 shadow-card border border-border flex items-center justify-between hover:shadow-card-hover transition-shadow">
+                    <div className="flex items-center gap-3">
+                      <Calendar className="w-5 h-5 text-primary" />
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">Mon calendrier</p>
+                        <p className="text-[11px] text-muted-foreground">Voir et publier mes posts du jour</p>
+                      </div>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                </Link>
+
+                <Link to="/analytics" className="block">
+                  <div className="bg-card rounded-2xl p-4 shadow-card border border-border flex items-center justify-between hover:shadow-card-hover transition-shadow">
+                    <div className="flex items-center gap-3">
+                      <BarChart3 className="w-5 h-5 text-primary" />
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">Mes statistiques</p>
+                        <p className="text-[11px] text-muted-foreground">Découvre ce qui marche</p>
+                      </div>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                </Link>
+              </>
+            )}
+          </div>
+        </section>
       </div>
       <BottomNav />
     </div>
