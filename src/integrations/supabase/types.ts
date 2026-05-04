@@ -56,11 +56,13 @@ export type Database = {
       user_stats: {
         Row: {
           created_at: string
+          display_name: string | null
           id: string
           last_active_date: string | null
           level: number
           longest_streak: number
           posts_per_day: number
+          publish_count: number
           streak: number
           total_points: number
           updated_at: string
@@ -68,11 +70,13 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          display_name?: string | null
           id?: string
           last_active_date?: string | null
           level?: number
           longest_streak?: number
           posts_per_day?: number
+          publish_count?: number
           streak?: number
           total_points?: number
           updated_at?: string
@@ -80,11 +84,13 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          display_name?: string | null
           id?: string
           last_active_date?: string | null
           level?: number
           longest_streak?: number
           posts_per_day?: number
+          publish_count?: number
           streak?: number
           total_points?: number
           updated_at?: string
@@ -97,7 +103,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_leaderboard: {
+        Args: never
+        Returns: {
+          display_name: string
+          is_current_user: boolean
+          publish_count: number
+          rank: number
+          user_id: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
