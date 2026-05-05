@@ -189,7 +189,7 @@ function AnalyticsPage() {
                     {row.is_current_user && <span className="text-xs text-primary ml-1">(toi)</span>}
                   </p>
                 </div>
-                <p className="text-sm font-bold text-foreground">{row.publish_count}</p>
+                <p className="text-sm font-bold text-foreground">{row.total_score}</p>
               </div>
             ))}
           </div>
