@@ -239,6 +239,45 @@ function UploadPage() {
           </label>
         )}
 
+        {/* Imported documents list (visible on upload step) */}
+        {step === "upload" && documents.length > 0 && (
+          <div className="mt-6">
+            <p className="text-sm font-semibold text-foreground mb-3">
+              Mes documents importés ({documents.length})
+            </p>
+            <div className="space-y-2">
+              {documents.map((doc) => (
+                <div
+                  key={doc.id}
+                  className="bg-card rounded-2xl p-3 shadow-card border border-border flex items-center gap-3"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center flex-shrink-0">
+                    <FileText className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{doc.fileName}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {doc.postCount} posts · {new Date(doc.createdAt).toLocaleDateString("fr-FR")}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setDocToDelete(doc)}
+                    disabled={deletingId === doc.id}
+                    aria-label={`Supprimer ${doc.fileName}`}
+                    className="p-2 rounded-xl hover:bg-destructive/10 transition-colors disabled:opacity-50"
+                  >
+                    {deletingId === doc.id ? (
+                      <Loader2 className="w-4 h-4 text-destructive animate-spin" />
+                    ) : (
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    )}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* STEP: Analyzing */}
         {step === "analyzing" && (
           <div className="flex flex-col items-center justify-center py-16 animate-slide-up">
