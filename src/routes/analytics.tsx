@@ -79,8 +79,8 @@ function AnalyticsPage() {
     else {
       const ahead = top10.find((r) => r.rank === me.rank - 1);
       if (ahead) {
-        const diff = ahead.publish_count - me.publish_count;
-        progression = `À ${diff} publication${diff > 1 ? "s" : ""} de la place ${ahead.rank}`;
+        const diff = ahead.total_score - me.total_score;
+        progression = `À ${diff} point${diff > 1 ? "s" : ""} de la place ${ahead.rank}`;
       }
     }
   }
