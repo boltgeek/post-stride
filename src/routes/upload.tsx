@@ -5,8 +5,20 @@ import { Button } from "@/components/ui/button";
 import { BottomNav } from "@/components/BottomNav";
 import { useAuth } from "@/lib/auth";
 import { useInvalidateAppData } from "@/hooks/use-app-data";
-import { addPosts, setPostsPerDay } from "@/lib/store";
+import { addPosts, setPostsPerDay, fetchImportedDocuments, createImportedDocument, deleteImportedDocument, type ImportedDocument } from "@/lib/store";
 import { extractTextFromFile } from "@/lib/document-parser";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/upload")({
@@ -38,6 +50,15 @@ function UploadPage() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const invalidate = useInvalidateAppData();
+  const queryClient = useQueryClient();
+  const [docToDelete, setDocToDelete] = useState<ImportedDocument | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const documentsQuery = useQuery({
+    queryKey: ["imported-documents"],
+    queryFn: fetchImportedDocuments,
+    enabled: !!user,
+  });
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -142,8 +163,15 @@ function UploadPage() {
         };
       });
 
-      await addPosts(user.id, newPosts);
+      const documentId = await createImportedDocument(
+        user.id,
+        file?.name || "Document",
+        summary,
+        newPosts.length
+      );
+      await addPosts(user.id, newPosts, documentId);
       invalidate();
+      queryClient.invalidateQueries({ queryKey: ["imported-documents"] });
       navigate({ to: "/" });
     } catch (err) {
       console.error("Import error:", err);
@@ -152,9 +180,33 @@ function UploadPage() {
     }
   };
 
+  const confirmDelete = async () => {
+    if (!docToDelete) return;
+    setDeletingId(docToDelete.id);
+    const docId = docToDelete.id;
+    try {
+      // Optimistic update
+      queryClient.setQueryData<ImportedDocument[]>(["imported-documents"], (old) =>
+        (old || []).filter((d) => d.id !== docId)
+      );
+      await deleteImportedDocument(docId);
+      // Posts cascade-delete via FK; refresh post lists too
+      invalidate();
+      toast.success("Document supprimé");
+    } catch (err: any) {
+      console.error("Delete error:", err);
+      toast.error("Erreur lors de la suppression");
+      queryClient.invalidateQueries({ queryKey: ["imported-documents"] });
+    } finally {
+      setDeletingId(null);
+      setDocToDelete(null);
+    }
+  };
+
   if (authLoading || !user) return null;
 
   const selectedCount = posts.filter((p) => p.selected).length;
+  const documents = documentsQuery.data || [];
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -185,6 +237,45 @@ function UploadPage() {
             </div>
             <input type="file" accept=".pdf,.docx,.doc" onChange={handleFileChange} className="hidden" />
           </label>
+        )}
+
+        {/* Imported documents list (visible on upload step) */}
+        {step === "upload" && documents.length > 0 && (
+          <div className="mt-6">
+            <p className="text-sm font-semibold text-foreground mb-3">
+              Mes documents importés ({documents.length})
+            </p>
+            <div className="space-y-2">
+              {documents.map((doc) => (
+                <div
+                  key={doc.id}
+                  className="bg-card rounded-2xl p-3 shadow-card border border-border flex items-center gap-3"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center flex-shrink-0">
+                    <FileText className="w-5 h-5 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{doc.fileName}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {doc.postCount} posts · {new Date(doc.createdAt).toLocaleDateString("fr-FR")}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setDocToDelete(doc)}
+                    disabled={deletingId === doc.id}
+                    aria-label={`Supprimer ${doc.fileName}`}
+                    className="p-2 rounded-xl hover:bg-destructive/10 transition-colors disabled:opacity-50"
+                  >
+                    {deletingId === doc.id ? (
+                      <Loader2 className="w-4 h-4 text-destructive animate-spin" />
+                    ) : (
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    )}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
 
         {/* STEP: Analyzing */}
@@ -320,6 +411,31 @@ function UploadPage() {
         )}
       </div>
       <BottomNav />
+
+      <AlertDialog open={!!docToDelete} onOpenChange={(open) => !open && setDocToDelete(null)}>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer ce document ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Es-tu sûr de vouloir supprimer ce document ? Cette action est irréversible.
+              {docToDelete && docToDelete.postCount > 0 && (
+                <span className="block mt-2 text-destructive">
+                  ⚠️ {docToDelete.postCount} posts liés seront aussi supprimés.
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl">Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

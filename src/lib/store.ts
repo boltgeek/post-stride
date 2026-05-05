@@ -97,15 +97,57 @@ export function parseContent(text: string, postsPerDay: number): Omit<Post, "id"
   return posts;
 }
 
-export async function addPosts(userId: string, newPosts: Omit<Post, "id">[]) {
+export async function addPosts(userId: string, newPosts: Omit<Post, "id">[], documentId?: string) {
   const rows = newPosts.map((p) => ({
     user_id: userId,
     content: p.content,
     scheduled_date: p.scheduledDate,
     scheduled_time: p.scheduledTime,
     status: p.status,
+    document_id: documentId ?? null,
   }));
   const { error } = await supabase.from("posts").insert(rows);
+  if (error) throw error;
+}
+
+export interface ImportedDocument {
+  id: string;
+  fileName: string;
+  summary: string | null;
+  postCount: number;
+  createdAt: string;
+}
+
+export async function fetchImportedDocuments(): Promise<ImportedDocument[]> {
+  const { data, error } = await supabase
+    .from("imported_documents")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data || []).map((r: any) => ({
+    id: r.id,
+    fileName: r.file_name,
+    summary: r.summary,
+    postCount: r.post_count,
+    createdAt: r.created_at,
+  }));
+}
+
+export async function createImportedDocument(userId: string, fileName: string, summary: string, postCount: number): Promise<string> {
+  const { data, error } = await supabase
+    .from("imported_documents")
+    .insert({ user_id: userId, file_name: fileName, summary, post_count: postCount })
+    .select("id")
+    .single();
+  if (error) throw error;
+  return data.id;
+}
+
+export async function deleteImportedDocument(documentId: string) {
+  const { error } = await supabase
+    .from("imported_documents")
+    .delete()
+    .eq("id", documentId);
   if (error) throw error;
 }
 
