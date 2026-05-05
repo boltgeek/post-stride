@@ -180,9 +180,33 @@ function UploadPage() {
     }
   };
 
+  const confirmDelete = async () => {
+    if (!docToDelete) return;
+    setDeletingId(docToDelete.id);
+    const docId = docToDelete.id;
+    try {
+      // Optimistic update
+      queryClient.setQueryData<ImportedDocument[]>(["imported-documents"], (old) =>
+        (old || []).filter((d) => d.id !== docId)
+      );
+      await deleteImportedDocument(docId);
+      // Posts cascade-delete via FK; refresh post lists too
+      invalidate();
+      toast.success("Document supprimé");
+    } catch (err: any) {
+      console.error("Delete error:", err);
+      toast.error("Erreur lors de la suppression");
+      queryClient.invalidateQueries({ queryKey: ["imported-documents"] });
+    } finally {
+      setDeletingId(null);
+      setDocToDelete(null);
+    }
+  };
+
   if (authLoading || !user) return null;
 
   const selectedCount = posts.filter((p) => p.selected).length;
+  const documents = documentsQuery.data || [];
 
   return (
     <div className="min-h-screen bg-background pb-24">
