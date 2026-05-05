@@ -19,7 +19,9 @@ export const Route = createFileRoute("/analytics")({
 interface LeaderboardRow {
   user_id: string;
   display_name: string;
+  copy_count: number;
   publish_count: number;
+  total_score: number;
   rank: number;
   is_current_user: boolean;
 }
@@ -77,8 +79,8 @@ function AnalyticsPage() {
     else {
       const ahead = top10.find((r) => r.rank === me.rank - 1);
       if (ahead) {
-        const diff = ahead.publish_count - me.publish_count;
-        progression = `À ${diff} publication${diff > 1 ? "s" : ""} de la place ${ahead.rank}`;
+        const diff = ahead.total_score - me.total_score;
+        progression = `À ${diff} point${diff > 1 ? "s" : ""} de la place ${ahead.rank}`;
       }
     }
   }
@@ -98,14 +100,19 @@ function AnalyticsPage() {
           <Trophy className="w-5 h-5 text-warning" />
           <h1 className="text-xl font-bold text-foreground">Classement</h1>
         </div>
-        <p className="text-xs text-muted-foreground mb-6">
-          Top 10 des vendeuses les plus actives. Chaque clic sur « Publier » = +1 point.
+        <p className="text-xs text-muted-foreground mb-3">
+          Top 10 des vendeuses les plus actives. Classement mis à jour en temps réel.
         </p>
+        <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 mb-5">
+          <p className="text-xs text-foreground">
+            👉 <span className="font-semibold">Copier</span> te fait gagner des points. <span className="font-semibold">Publier</span> te donne un bonus.
+          </p>
+        </div>
 
         {/* Personal card */}
         {me && (
           <div className="bg-card rounded-2xl p-4 shadow-card border border-border mb-5">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mb-3">
               <div>
                 <p className="text-xs text-muted-foreground">Ta position</p>
                 <p className="text-2xl font-bold text-foreground">
@@ -116,8 +123,18 @@ function AnalyticsPage() {
                 )}
               </div>
               <div className="text-right">
-                <p className="text-xs text-muted-foreground">Tes publications</p>
-                <p className="text-2xl font-bold text-foreground">{me.publish_count}</p>
+                <p className="text-xs text-muted-foreground">Score total</p>
+                <p className="text-3xl font-bold text-foreground">{me.total_score}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2 pt-3 border-t border-border">
+              <div className="text-center">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Copier</p>
+                <p className="text-lg font-bold text-foreground">{me.copy_count}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Publier (bonus)</p>
+                <p className="text-lg font-bold text-foreground">{me.publish_count}</p>
               </div>
             </div>
           </div>
@@ -140,7 +157,7 @@ function AnalyticsPage() {
                     <p className="text-xs font-semibold text-foreground truncate max-w-full text-center">
                       {row.display_name}
                     </p>
-                    <p className="text-[10px] text-muted-foreground">{row.publish_count} pub.</p>
+                    <p className="text-[10px] text-muted-foreground">{row.total_score} pts</p>
                     <div className={`${heights[i]} w-full gradient-primary rounded-t-lg mt-2 flex items-start justify-center pt-1`}>
                       <span className="text-white text-sm font-bold">{row.rank}</span>
                     </div>
@@ -172,7 +189,7 @@ function AnalyticsPage() {
                     {row.is_current_user && <span className="text-xs text-primary ml-1">(toi)</span>}
                   </p>
                 </div>
-                <p className="text-sm font-bold text-foreground">{row.publish_count}</p>
+                <p className="text-sm font-bold text-foreground">{row.total_score}</p>
               </div>
             ))}
           </div>
@@ -191,7 +208,7 @@ function AnalyticsPage() {
                   {me.display_name} <span className="text-xs text-primary ml-1">(toi)</span>
                 </p>
               </div>
-              <p className="text-sm font-bold text-foreground">{me.publish_count}</p>
+              <p className="text-sm font-bold text-foreground">{me.total_score}</p>
             </div>
           </>
         )}
@@ -200,7 +217,7 @@ function AnalyticsPage() {
           <div className="text-center py-12 text-muted-foreground">
             <Trophy className="w-10 h-10 mx-auto mb-3 opacity-30" />
             <p className="text-sm">Pas encore de classement</p>
-            <p className="text-xs mt-1">Publie ton premier post pour entrer dans le top !</p>
+            <p className="text-xs mt-1">Copie ou publie ton premier post pour entrer dans le top !</p>
           </div>
         )}
       </div>

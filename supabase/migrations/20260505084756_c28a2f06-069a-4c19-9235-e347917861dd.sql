@@ -1,0 +1,1 @@
+ALTER TABLE public.user_stats ADD COLUMN IF NOT EXISTS copy_count integer NOT NULL DEFAULT 0;

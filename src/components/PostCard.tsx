@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import type { Post } from "@/lib/store";
 import { publishPost, skipPost, updatePostStats, updatePostContent, deletePost } from "@/lib/store";
 import { useInvalidateAppData } from "@/hooks/use-app-data";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PostCardProps {
   post: Post;
@@ -24,6 +25,12 @@ export function PostCard({ post, isNext }: PostCardProps) {
     await navigator.clipboard.writeText(post.content);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+    try {
+      await (supabase as any).rpc("increment_copy_count");
+      invalidate();
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handlePublish = async () => {
