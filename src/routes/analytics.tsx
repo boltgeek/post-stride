@@ -157,7 +157,7 @@ function AnalyticsPage() {
                     <p className="text-xs font-semibold text-foreground truncate max-w-full text-center">
                       {row.display_name}
                     </p>
-                    <p className="text-[10px] text-muted-foreground">{row.publish_count} pub.</p>
+                    <p className="text-[10px] text-muted-foreground">{row.total_score} pts</p>
                     <div className={`${heights[i]} w-full gradient-primary rounded-t-lg mt-2 flex items-start justify-center pt-1`}>
                       <span className="text-white text-sm font-bold">{row.rank}</span>
                     </div>
