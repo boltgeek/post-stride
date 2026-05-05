@@ -19,7 +19,9 @@ export const Route = createFileRoute("/analytics")({
 interface LeaderboardRow {
   user_id: string;
   display_name: string;
+  copy_count: number;
   publish_count: number;
+  total_score: number;
   rank: number;
   is_current_user: boolean;
 }
