@@ -24,6 +24,12 @@ export function PostCard({ post, isNext }: PostCardProps) {
     await navigator.clipboard.writeText(post.content);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+    try {
+      await (supabase as any).rpc("increment_copy_count");
+      invalidate();
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handlePublish = async () => {
