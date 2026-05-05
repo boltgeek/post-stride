@@ -100,14 +100,19 @@ function AnalyticsPage() {
           <Trophy className="w-5 h-5 text-warning" />
           <h1 className="text-xl font-bold text-foreground">Classement</h1>
         </div>
-        <p className="text-xs text-muted-foreground mb-6">
-          Top 10 des vendeuses les plus actives. Chaque clic sur « Publier » = +1 point.
+        <p className="text-xs text-muted-foreground mb-3">
+          Top 10 des vendeuses les plus actives. Classement mis à jour en temps réel.
         </p>
+        <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 mb-5">
+          <p className="text-xs text-foreground">
+            👉 <span className="font-semibold">Copier</span> te fait gagner des points. <span className="font-semibold">Publier</span> te donne un bonus.
+          </p>
+        </div>
 
         {/* Personal card */}
         {me && (
           <div className="bg-card rounded-2xl p-4 shadow-card border border-border mb-5">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mb-3">
               <div>
                 <p className="text-xs text-muted-foreground">Ta position</p>
                 <p className="text-2xl font-bold text-foreground">
@@ -118,8 +123,18 @@ function AnalyticsPage() {
                 )}
               </div>
               <div className="text-right">
-                <p className="text-xs text-muted-foreground">Tes publications</p>
-                <p className="text-2xl font-bold text-foreground">{me.publish_count}</p>
+                <p className="text-xs text-muted-foreground">Score total</p>
+                <p className="text-3xl font-bold text-foreground">{me.total_score}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2 pt-3 border-t border-border">
+              <div className="text-center">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Copier</p>
+                <p className="text-lg font-bold text-foreground">{me.copy_count}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Publier (bonus)</p>
+                <p className="text-lg font-bold text-foreground">{me.publish_count}</p>
               </div>
             </div>
           </div>
