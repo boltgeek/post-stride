@@ -217,7 +217,7 @@ function AnalyticsPage() {
           <div className="text-center py-12 text-muted-foreground">
             <Trophy className="w-10 h-10 mx-auto mb-3 opacity-30" />
             <p className="text-sm">Pas encore de classement</p>
-            <p className="text-xs mt-1">Publie ton premier post pour entrer dans le top !</p>
+            <p className="text-xs mt-1">Copie ou publie ton premier post pour entrer dans le top !</p>
           </div>
         )}
       </div>
