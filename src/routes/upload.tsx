@@ -163,8 +163,15 @@ function UploadPage() {
         };
       });
 
-      await addPosts(user.id, newPosts);
+      const documentId = await createImportedDocument(
+        user.id,
+        file?.name || "Document",
+        summary,
+        newPosts.length
+      );
+      await addPosts(user.id, newPosts, documentId);
       invalidate();
+      queryClient.invalidateQueries({ queryKey: ["imported-documents"] });
       navigate({ to: "/" });
     } catch (err) {
       console.error("Import error:", err);
