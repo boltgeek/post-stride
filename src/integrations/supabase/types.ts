@@ -14,11 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      imported_documents: {
+        Row: {
+          created_at: string
+          file_name: string
+          id: string
+          post_count: number
+          summary: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          id?: string
+          post_count?: number
+          summary?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          id?: string
+          post_count?: number
+          summary?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       posts: {
         Row: {
           comments: number | null
           content: string
           created_at: string
+          document_id: string | null
           id: string
           published_at: string | null
           reactions: number | null
@@ -31,6 +59,7 @@ export type Database = {
           comments?: number | null
           content: string
           created_at?: string
+          document_id?: string | null
           id?: string
           published_at?: string | null
           reactions?: number | null
@@ -43,6 +72,7 @@ export type Database = {
           comments?: number | null
           content?: string
           created_at?: string
+          document_id?: string | null
           id?: string
           published_at?: string | null
           reactions?: number | null
@@ -51,7 +81,15 @@ export type Database = {
           status?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "posts_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "imported_documents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_stats: {
         Row: {
