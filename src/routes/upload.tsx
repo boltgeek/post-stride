@@ -50,6 +50,15 @@ function UploadPage() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const invalidate = useInvalidateAppData();
+  const queryClient = useQueryClient();
+  const [docToDelete, setDocToDelete] = useState<ImportedDocument | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const documentsQuery = useQuery({
+    queryKey: ["imported-documents"],
+    queryFn: fetchImportedDocuments,
+    enabled: !!user,
+  });
 
   useEffect(() => {
     if (!authLoading && !user) {
