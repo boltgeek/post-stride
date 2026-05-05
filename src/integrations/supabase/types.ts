@@ -109,13 +109,16 @@ export type Database = {
       get_leaderboard: {
         Args: never
         Returns: {
+          copy_count: number
           display_name: string
           is_current_user: boolean
           publish_count: number
           rank: number
+          total_score: number
           user_id: string
         }[]
       }
+      increment_copy_count: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
