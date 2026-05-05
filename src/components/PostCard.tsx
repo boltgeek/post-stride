@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import type { Post } from "@/lib/store";
 import { publishPost, skipPost, updatePostStats, updatePostContent, deletePost } from "@/lib/store";
 import { useInvalidateAppData } from "@/hooks/use-app-data";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PostCardProps {
   post: Post;
