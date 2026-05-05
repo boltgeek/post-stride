@@ -55,6 +55,7 @@ export type Database = {
       }
       user_stats: {
         Row: {
+          copy_count: number
           created_at: string
           display_name: string | null
           id: string
@@ -69,6 +70,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          copy_count?: number
           created_at?: string
           display_name?: string | null
           id?: string
@@ -83,6 +85,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          copy_count?: number
           created_at?: string
           display_name?: string | null
           id?: string
