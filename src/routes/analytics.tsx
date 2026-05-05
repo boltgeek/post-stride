@@ -208,7 +208,7 @@ function AnalyticsPage() {
                   {me.display_name} <span className="text-xs text-primary ml-1">(toi)</span>
                 </p>
               </div>
-              <p className="text-sm font-bold text-foreground">{me.publish_count}</p>
+              <p className="text-sm font-bold text-foreground">{me.total_score}</p>
             </div>
           </>
         )}
