@@ -45,17 +45,8 @@ function AnalyticsPage() {
     refetchInterval: 15000,
   });
 
-  // Realtime: refetch on any user_stats change
-  useEffect(() => {
-    const channel = supabase
-      .channel("leaderboard-stats")
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "user_stats" }, () => refetch())
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "user_stats" }, () => refetch())
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [refetch]);
+  // Leaderboard refreshes via 15s polling above (realtime removed for security).
+
 
   if (authLoading || isLoading || !user) {
     return (
