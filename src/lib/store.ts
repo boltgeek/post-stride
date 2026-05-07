@@ -110,6 +110,44 @@ export async function addPosts(userId: string, newPosts: Omit<Post, "id">[], doc
   if (error) throw error;
 }
 
+// Reschedule all pending posts starting from today, preserving order and times.
+export async function rescheduleAllPending(userId: string, postsPerDay: number = 3) {
+  const { data, error } = await supabase
+    .from("posts")
+    .select("id, scheduled_date, scheduled_time")
+    .eq("user_id", userId)
+    .eq("status", "pending")
+    .order("scheduled_date", { ascending: true })
+    .order("scheduled_time", { ascending: true });
+  if (error) throw error;
+  const pending = data || [];
+  if (pending.length === 0) return 0;
+
+  const times = ["09:00", "13:00", "18:00", "08:00", "11:00", "15:00", "17:00", "19:00", "20:00", "21:00"];
+  const startDate = new Date();
+  const updates = pending.map((row, i) => {
+    const dayOffset = Math.floor(i / postsPerDay);
+    const timeIndex = i % postsPerDay;
+    const date = new Date(startDate);
+    date.setDate(date.getDate() + dayOffset);
+    return {
+      id: row.id,
+      scheduled_date: date.toISOString().slice(0, 10),
+      scheduled_time: times[timeIndex] || times[0],
+    };
+  });
+
+  for (const u of updates) {
+    const { error: uErr } = await supabase
+      .from("posts")
+      .update({ scheduled_date: u.scheduled_date, scheduled_time: u.scheduled_time })
+      .eq("id", u.id)
+      .eq("user_id", userId);
+    if (uErr) throw uErr;
+  }
+  return updates.length;
+}
+
 export interface ImportedDocument {
   id: string;
   fileName: string;
