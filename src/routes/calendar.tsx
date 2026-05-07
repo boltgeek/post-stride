@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Check, X, Clock, Calendar as CalendarIcon, ChevronDown, ChevronUp, ArrowRight, Upload, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, ChevronDown, ChevronUp, ArrowRight, Upload, Plus, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BottomNav } from "@/components/BottomNav";
 import { StreakBadge } from "@/components/StreakBadge";
@@ -8,14 +8,16 @@ import { ProgressRing } from "@/components/ProgressRing";
 import { PostCard } from "@/components/PostCard";
 import { NotificationToggle } from "@/components/NotificationToggle";
 import { useAuth } from "@/lib/auth";
-import { useAppData } from "@/hooks/use-app-data";
+import { useAppData, useInvalidateAppData } from "@/hooks/use-app-data";
 import { useNotifications, useScheduleDailyReminders } from "@/hooks/use-notifications";
+import { toast } from "sonner";
 import {
   getTodayPosts,
   getNextPost,
   getWeeklyStats,
   getLevelName,
   getRewardMessage,
+  rescheduleAllPending,
   type Post,
 } from "@/lib/store";
 
