@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { Upload, Calendar, CheckCircle2, BarChart3, Sparkles, ArrowRight, LogOut, Flame } from "lucide-react";
+import { Upload, Calendar, CheckCircle2, BarChart3, Sparkles, ArrowRight, LogOut, Flame, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BottomNav } from "@/components/BottomNav";
 import { useAuth } from "@/lib/auth";
@@ -193,6 +193,21 @@ function Home() {
                 </Link>
               </>
             )}
+
+            <Link to="/coach" className="block">
+              <div className="bg-card rounded-2xl p-4 shadow-card border border-border flex items-center justify-between hover:shadow-card-hover transition-shadow">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-[#25D366]/15 flex items-center justify-center">
+                    <MessageCircle className="w-5 h-5 text-[#25D366]" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Contacter ma coach</p>
+                    <p className="text-[11px] text-muted-foreground">Une question ? Écris sur WhatsApp</p>
+                  </div>
+                </div>
+                <ArrowRight className="w-4 h-4 text-muted-foreground" />
+              </div>
+            </Link>
           </div>
         </section>
       </div>

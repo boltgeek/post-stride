@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Check, X, Clock, Calendar as CalendarIcon, ChevronDown, ChevronUp, ArrowRight, Upload, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, ChevronDown, ChevronUp, ArrowRight, Upload, Plus, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BottomNav } from "@/components/BottomNav";
 import { StreakBadge } from "@/components/StreakBadge";
@@ -8,14 +8,16 @@ import { ProgressRing } from "@/components/ProgressRing";
 import { PostCard } from "@/components/PostCard";
 import { NotificationToggle } from "@/components/NotificationToggle";
 import { useAuth } from "@/lib/auth";
-import { useAppData } from "@/hooks/use-app-data";
+import { useAppData, useInvalidateAppData } from "@/hooks/use-app-data";
 import { useNotifications, useScheduleDailyReminders } from "@/hooks/use-notifications";
+import { toast } from "sonner";
 import {
   getTodayPosts,
   getNextPost,
   getWeeklyStats,
   getLevelName,
   getRewardMessage,
+  rescheduleAllPending,
   type Post,
 } from "@/lib/store";
 
@@ -32,12 +34,31 @@ export const Route = createFileRoute("/calendar")({
 function CalendarPage() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const { posts, streak, level, totalPoints, loading } = useAppData();
+  const { posts, streak, level, totalPoints, postsPerDay, loading } = useAppData();
+  const invalidate = useInvalidateAppData();
   const todayStr = new Date().toISOString().slice(0, 10);
   const [selectedDate, setSelectedDate] = useState(todayStr);
   const [showUpcoming, setShowUpcoming] = useState(false);
+  const [rescheduling, setRescheduling] = useState(false);
   const { enabled: notifEnabled } = useNotifications();
   useScheduleDailyReminders(posts, notifEnabled);
+
+  const latePosts = posts.filter((p) => p.status === "pending" && p.scheduledDate < todayStr);
+
+  const handleReschedule = async () => {
+    if (!user) return;
+    setRescheduling(true);
+    try {
+      const n = await rescheduleAllPending(user.id, postsPerDay || 3);
+      toast.success(`📅 ${n} post${n > 1 ? "s" : ""} replanifié${n > 1 ? "s" : ""} à partir d'aujourd'hui`);
+      invalidate();
+      setSelectedDate(todayStr);
+    } catch (e: any) {
+      toast.error("Erreur : " + (e.message || "impossible de replanifier"));
+    } finally {
+      setRescheduling(false);
+    }
+  };
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -132,6 +153,35 @@ function CalendarPage() {
             )}
 
             <NotificationToggle />
+
+            {/* Reschedule banner */}
+            {latePosts.length > 0 ? (
+              <div className="bg-accent border-2 border-primary rounded-2xl p-4 mb-4 animate-slide-up">
+                <p className="text-sm font-semibold text-foreground mb-1">
+                  ⚠️ {latePosts.length} post{latePosts.length > 1 ? "s" : ""} en retard
+                </p>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Repars de zéro : on replanifie tout à partir d'aujourd'hui.
+                </p>
+                <Button
+                  onClick={handleReschedule}
+                  disabled={rescheduling}
+                  className="w-full rounded-xl gradient-primary text-primary-foreground shadow-primary h-11 text-sm font-semibold"
+                >
+                  <RefreshCw className={`w-4 h-4 mr-2 ${rescheduling ? "animate-spin" : ""}`} />
+                  Mettre à jour mon calendrier
+                </Button>
+              </div>
+            ) : (
+              <button
+                onClick={handleReschedule}
+                disabled={rescheduling || posts.filter((p) => p.status === "pending").length === 0}
+                className="w-full bg-card rounded-2xl p-3 mb-4 shadow-card border border-border flex items-center justify-center gap-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${rescheduling ? "animate-spin" : ""}`} />
+                Mettre à jour mon calendrier
+              </button>
+            )}
 
             {/* Week stats */}
             <div className="grid grid-cols-3 gap-2 mb-5">
