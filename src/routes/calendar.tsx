@@ -154,6 +154,35 @@ function CalendarPage() {
 
             <NotificationToggle />
 
+            {/* Reschedule banner */}
+            {latePosts.length > 0 ? (
+              <div className="bg-accent border-2 border-primary rounded-2xl p-4 mb-4 animate-slide-up">
+                <p className="text-sm font-semibold text-foreground mb-1">
+                  ⚠️ {latePosts.length} post{latePosts.length > 1 ? "s" : ""} en retard
+                </p>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Repars de zéro : on replanifie tout à partir d'aujourd'hui.
+                </p>
+                <Button
+                  onClick={handleReschedule}
+                  disabled={rescheduling}
+                  className="w-full rounded-xl gradient-primary text-primary-foreground shadow-primary h-11 text-sm font-semibold"
+                >
+                  <RefreshCw className={`w-4 h-4 mr-2 ${rescheduling ? "animate-spin" : ""}`} />
+                  Mettre à jour mon calendrier
+                </Button>
+              </div>
+            ) : (
+              <button
+                onClick={handleReschedule}
+                disabled={rescheduling || posts.filter((p) => p.status === "pending").length === 0}
+                className="w-full bg-card rounded-2xl p-3 mb-4 shadow-card border border-border flex items-center justify-center gap-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${rescheduling ? "animate-spin" : ""}`} />
+                Mettre à jour mon calendrier
+              </button>
+            )}
+
             {/* Week stats */}
             <div className="grid grid-cols-3 gap-2 mb-5">
               {[
