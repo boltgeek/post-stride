@@ -34,12 +34,31 @@ export const Route = createFileRoute("/calendar")({
 function CalendarPage() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const { posts, streak, level, totalPoints, loading } = useAppData();
+  const { posts, streak, level, totalPoints, postsPerDay, loading } = useAppData();
+  const invalidate = useInvalidateAppData();
   const todayStr = new Date().toISOString().slice(0, 10);
   const [selectedDate, setSelectedDate] = useState(todayStr);
   const [showUpcoming, setShowUpcoming] = useState(false);
+  const [rescheduling, setRescheduling] = useState(false);
   const { enabled: notifEnabled } = useNotifications();
   useScheduleDailyReminders(posts, notifEnabled);
+
+  const latePosts = posts.filter((p) => p.status === "pending" && p.scheduledDate < todayStr);
+
+  const handleReschedule = async () => {
+    if (!user) return;
+    setRescheduling(true);
+    try {
+      const n = await rescheduleAllPending(user.id, postsPerDay || 3);
+      toast.success(`📅 ${n} post${n > 1 ? "s" : ""} replanifié${n > 1 ? "s" : ""} à partir d'aujourd'hui`);
+      invalidate();
+      setSelectedDate(todayStr);
+    } catch (e: any) {
+      toast.error("Erreur : " + (e.message || "impossible de replanifier"));
+    } finally {
+      setRescheduling(false);
+    }
+  };
 
   useEffect(() => {
     if (!authLoading && !user) {
