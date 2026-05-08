@@ -22,7 +22,7 @@ function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
-  const [forgotMode, setForgotMode] = useState(false);
+  
   const navigate = useNavigate();
   const { signIn, signUp } = useAuth();
 
