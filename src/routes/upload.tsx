@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect, useCallback } from "react";
-import { FileUp, FileText, Trash2, Pencil, Check, ArrowRight, Loader2, AlertCircle, X } from "lucide-react";
+import { FileUp, FileText, Trash2, Pencil, Check, ArrowRight, Loader2, AlertCircle, X, CalendarPlus, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BottomNav } from "@/components/BottomNav";
 import { useAuth } from "@/lib/auth";
