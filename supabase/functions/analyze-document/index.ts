@@ -10,7 +10,6 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    // Require authentication — prevents unauthenticated abuse of AI credits
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return Response.json({ error: "Unauthorized" }, { status: 401, headers: corsHeaders });
@@ -30,8 +29,8 @@ serve(async (req) => {
       return Response.json({ error: "Document trop court ou vide" }, { status: 400, headers: corsHeaders });
     }
 
-    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-    if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is not configured");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
     const systemPrompt = `Tu es un assistant expert en content marketing pour Facebook.
 Tu reçois le contenu brut extrait d'un document (PDF ou Word).
@@ -62,33 +61,41 @@ Format :
   ]
 }`;
 
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
     const userPrompt = `Fichier : ${fileName}\n\nContenu du document :\n\n${text.slice(0, 30000)}`;
 
-    const response = await fetch(geminiUrl, {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({
-        systemInstruction: { parts: [{ text: systemPrompt }] },
-        contents: [{ role: "user", parts: [{ text: userPrompt }] }],
-        generationConfig: { responseMimeType: "application/json", temperature: 0.7 },
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+        response_format: { type: "json_object" },
       }),
     });
 
     if (!response.ok) {
       const t = await response.text();
-      console.error("Gemini API error:", response.status, t);
+      console.error("Lovable AI error:", response.status, t);
       if (response.status === 429) {
         return Response.json({ error: "Trop de requêtes, réessaie dans quelques secondes" }, { status: 429, headers: corsHeaders });
+      }
+      if (response.status === 402) {
+        return Response.json({ error: "Crédits IA épuisés" }, { status: 402, headers: corsHeaders });
       }
       return Response.json({ error: "Erreur d'analyse IA" }, { status: 500, headers: corsHeaders });
     }
 
     const data = await response.json();
-    const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    const content = data.choices?.[0]?.message?.content;
 
     if (!content) {
-      console.error("No content in Gemini response:", JSON.stringify(data));
+      console.error("No content in AI response:", JSON.stringify(data));
       return Response.json({ error: "Pas de réponse de l'IA" }, { status: 500, headers: corsHeaders });
     }
 
@@ -101,7 +108,6 @@ Format :
       return Response.json({ error: "Réponse IA invalide, réessaie" }, { status: 500, headers: corsHeaders });
     }
 
-    // Strip any hashtags that slipped through
     if (parsed.posts && Array.isArray(parsed.posts)) {
       parsed.posts = parsed.posts.map((p: any) => ({
         ...p,
