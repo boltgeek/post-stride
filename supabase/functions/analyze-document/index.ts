@@ -30,8 +30,8 @@ serve(async (req) => {
       return Response.json({ error: "Document trop court ou vide" }, { status: 400, headers: corsHeaders });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    if (!GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is not configured");
 
     const systemPrompt = `Tu es un assistant expert en content marketing pour Facebook.
 Tu reçois le contenu brut extrait d'un document (PDF ou Word).
@@ -62,37 +62,33 @@ Format :
   ]
 }`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+    const userPrompt = `Fichier : ${fileName}\n\nContenu du document :\n\n${text.slice(0, 30000)}`;
+
+    const response = await fetch(geminiUrl, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: `Fichier : ${fileName}\n\nContenu du document :\n\n${text.slice(0, 30000)}` },
-        ],
+        systemInstruction: { parts: [{ text: systemPrompt }] },
+        contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+        generationConfig: { responseMimeType: "application/json", temperature: 0.7 },
       }),
     });
 
     if (!response.ok) {
+      const t = await response.text();
+      console.error("Gemini API error:", response.status, t);
       if (response.status === 429) {
         return Response.json({ error: "Trop de requêtes, réessaie dans quelques secondes" }, { status: 429, headers: corsHeaders });
       }
-      if (response.status === 402) {
-        return Response.json({ error: "Crédits IA épuisés" }, { status: 402, headers: corsHeaders });
-      }
-      const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
       return Response.json({ error: "Erreur d'analyse IA" }, { status: 500, headers: corsHeaders });
     }
 
     const data = await response.json();
-    const content = data.choices?.[0]?.message?.content;
+    const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
     if (!content) {
+      console.error("No content in Gemini response:", JSON.stringify(data));
       return Response.json({ error: "Pas de réponse de l'IA" }, { status: 500, headers: corsHeaders });
     }
 
