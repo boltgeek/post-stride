@@ -22,8 +22,26 @@ function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
+  
   const navigate = useNavigate();
   const { signIn, signUp } = useAuth();
+
+  const handleForgotPassword = async () => {
+    setError("");
+    setSuccess("");
+    if (!email) {
+      setError("Entre ton email d'abord");
+      return;
+    }
+    setLoading(true);
+    const { supabase } = await import("@/integrations/supabase/client");
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/account`,
+    });
+    if (error) setError(error.message);
+    else setSuccess("Email envoyé ! Vérifie ta boîte mail pour modifier ton mot de passe.");
+    setLoading(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -152,6 +170,17 @@ function LoginPage() {
         >
           {isSignUp ? "Déjà un compte ? Se connecter" : "Pas de compte ? S'inscrire"}
         </button>
+
+        {!isSignUp && (
+          <button
+            type="button"
+            onClick={handleForgotPassword}
+            disabled={loading}
+            className="w-full text-center text-sm text-primary mt-2 hover:underline transition-colors"
+          >
+            Mot de passe oublié ?
+          </button>
+        )}
       </div>
     </div>
   );
