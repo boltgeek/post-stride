@@ -170,6 +170,17 @@ function LoginPage() {
         >
           {isSignUp ? "Déjà un compte ? Se connecter" : "Pas de compte ? S'inscrire"}
         </button>
+
+        {!isSignUp && (
+          <button
+            type="button"
+            onClick={handleForgotPassword}
+            disabled={loading}
+            className="w-full text-center text-sm text-primary mt-2 hover:underline transition-colors"
+          >
+            Mot de passe oublié ?
+          </button>
+        )}
       </div>
     </div>
   );
