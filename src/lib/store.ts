@@ -182,6 +182,13 @@ export async function createImportedDocument(userId: string, fileName: string, s
 }
 
 export async function deleteImportedDocument(documentId: string) {
+  // Delete associated posts first
+  const { error: postsError } = await supabase
+    .from("posts")
+    .delete()
+    .eq("document_id", documentId);
+  if (postsError) throw postsError;
+
   const { error } = await supabase
     .from("imported_documents")
     .delete()
