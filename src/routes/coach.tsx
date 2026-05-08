@@ -10,7 +10,7 @@ export const Route = createFileRoute("/coach")({
   component: CoachPage,
   head: () => ({
     meta: [
-      { title: "Mon coach — PostPilot" },
+      { title: "Mon coach — Routine Post" },
       { name: "description", content: "Contacte ta coach business sur WhatsApp" },
     ],
   }),
@@ -41,7 +41,7 @@ function CoachPage() {
     user.email?.split("@")[0] ||
     "moi";
 
-  const message = `Bonjour 👋 Je suis ${firstName}, j'utilise PostPilot (niveau ${level}, ${streak} jour${streak > 1 ? "s" : ""} de régularité, ${totalPoints} pts, ${posts.length} posts planifiés). J'aimerais ton aide pour :`;
+  const message = `Bonjour 👋 Je suis ${firstName}, j'utilise Routine Post (niveau ${level}, ${streak} jour${streak > 1 ? "s" : ""} de régularité, ${totalPoints} pts, ${posts.length} posts planifiés). J'aimerais ton aide pour :`;
 
   const waLink = `https://wa.me/${COACH_WHATSAPP}?text=${encodeURIComponent(message)}`;
 

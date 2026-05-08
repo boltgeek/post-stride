@@ -25,7 +25,7 @@ export const Route = createFileRoute("/upload")({
   component: UploadPage,
   head: () => ({
     meta: [
-      { title: "Importer — PostPilot" },
+      { title: "Importer — Routine Post" },
       { name: "description", content: "Importe ton document pour analyser et planifier ton contenu" },
     ],
   }),

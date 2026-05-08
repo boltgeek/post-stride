@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { Post } from "@/lib/store";
 
-const STORAGE_KEY = "postpilot_notifications_enabled";
+const STORAGE_KEY = "routine-post_notifications_enabled";
 
 type PermissionState = "default" | "granted" | "denied" | "unsupported";
 
@@ -31,7 +31,7 @@ export function useNotifications() {
       setEnabled(true);
       // Welcome notification to confirm
       try {
-        new Notification("PostPilot 🔥", {
+        new Notification("Routine Post 🔥", {
           body: "Notifications activées ! Tu recevras un rappel à chaque heure de publication.",
           icon: "/icon-512.png",
           badge: "/icon-512.png",

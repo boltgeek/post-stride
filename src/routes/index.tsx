@@ -10,7 +10,7 @@ export const Route = createFileRoute("/")({
   component: Home,
   head: () => ({
     meta: [
-      { title: "PostPilot — Ton assistant contenu" },
+      { title: "Routine Post — Ton assistant contenu" },
       { name: "description", content: "Poste chaque jour sans réfléchir. Ton CM automatique." },
     ],
   }),
@@ -20,7 +20,7 @@ const steps = [
   {
     icon: Upload,
     title: "Importe ton contenu",
-    desc: "Ajoute tes posts pré-écrits (texte, Word, PDF). PostPilot les organise pour toi.",
+    desc: "Ajoute tes posts pré-écrits (texte, Word, PDF). Routine Post les organise pour toi.",
   },
   {
     icon: Calendar,
@@ -66,7 +66,7 @@ function Home() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-xl font-bold text-foreground">PostPilot</h1>
+            <h1 className="text-xl font-bold text-foreground">Routine Post</h1>
             <p className="text-xs text-muted-foreground">Ton assistant contenu</p>
           </div>
           <div className="flex items-center gap-2">
@@ -94,7 +94,7 @@ function Home() {
             Poste chaque jour, sans réfléchir
           </h2>
           <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-            PostPilot t'aide à publier ton contenu Facebook au bon moment, garder ta régularité et faire grandir tes ventes.
+            Routine Post t'aide à publier ton contenu Facebook au bon moment, garder ta régularité et faire grandir tes ventes.
           </p>
         </section>
 

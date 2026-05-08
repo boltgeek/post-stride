@@ -9,8 +9,8 @@ export const Route = createFileRoute("/login")({
   component: LoginPage,
   head: () => ({
     meta: [
-      { title: "Connexion — PostPilot" },
-      { name: "description", content: "Connecte-toi à PostPilot" },
+      { title: "Connexion — Routine Post" },
+      { name: "description", content: "Connecte-toi à Routine Post" },
     ],
   }),
 });
@@ -57,7 +57,7 @@ function LoginPage() {
           <div className="w-16 h-16 rounded-full gradient-primary flex items-center justify-center mx-auto mb-4 shadow-primary">
             <Flame className="w-8 h-8 text-primary-foreground" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">PostPilot</h1>
+          <h1 className="text-2xl font-bold text-foreground">Routine Post</h1>
           <p className="text-sm text-muted-foreground mt-1">Ton assistant contenu</p>
         </div>
 
