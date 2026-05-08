@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect, useCallback } from "react";
-import { FileUp, FileText, Trash2, Pencil, Check, ArrowRight, Loader2, AlertCircle, X } from "lucide-react";
+import { FileUp, FileText, Trash2, Pencil, Check, ArrowRight, Loader2, AlertCircle, X, CalendarPlus, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BottomNav } from "@/components/BottomNav";
 import { useAuth } from "@/lib/auth";
@@ -53,6 +53,48 @@ function UploadPage() {
   const queryClient = useQueryClient();
   const [docToDelete, setDocToDelete] = useState<ImportedDocument | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [genFreq, setGenFreq] = useState(1);
+  const [genDays, setGenDays] = useState(7);
+  const [generating, setGenerating] = useState(false);
+
+  const handleGenerateEmpty = async () => {
+    if (!user) return;
+    setGenerating(true);
+    try {
+      await setPostsPerDay(user.id, genFreq);
+      const times = ["09:00", "13:00", "18:00", "08:00", "11:00"];
+      const startDate = new Date();
+      const newPosts = [];
+      for (let d = 0; d < genDays; d++) {
+        for (let i = 0; i < genFreq; i++) {
+          const date = new Date(startDate);
+          date.setDate(date.getDate() + d);
+          newPosts.push({
+            content: "✍️ Rédige ton post ici. Clique sur l'icône crayon pour modifier.",
+            scheduledDate: date.toISOString().slice(0, 10),
+            scheduledTime: times[i] || times[0],
+            status: "pending" as const,
+          });
+        }
+      }
+      const documentId = await createImportedDocument(
+        user.id,
+        `Calendrier vierge — ${genDays}j × ${genFreq}/j`,
+        "Calendrier généré sans document. Remplis chaque post à la main.",
+        newPosts.length
+      );
+      await addPosts(user.id, newPosts, documentId);
+      invalidate();
+      queryClient.invalidateQueries({ queryKey: ["imported-documents"] });
+      toast.success(`${newPosts.length} créneaux créés`);
+      navigate({ to: "/calendar" });
+    } catch (err: any) {
+      console.error("Generate error:", err);
+      toast.error("Erreur lors de la génération");
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   const documentsQuery = useQuery({
     queryKey: ["imported-documents"],
@@ -237,6 +279,67 @@ function UploadPage() {
             </div>
             <input type="file" accept=".pdf,.docx,.doc" onChange={handleFileChange} className="hidden" />
           </label>
+        )}
+
+        {/* Generate empty calendar (no document needed) */}
+        {step === "upload" && (
+          <div className="mt-6 bg-card rounded-2xl p-4 shadow-card border border-border">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center flex-shrink-0 shadow-primary">
+                <Sparkles className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-foreground">Pas de document ?</p>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  Génère un calendrier vide et rédige tes posts au fur et à mesure.
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs font-medium text-foreground mb-2">Posts par jour</p>
+            <div className="flex gap-2 mb-3">
+              {[1, 2, 3, 5].map((n) => (
+                <button
+                  key={n}
+                  onClick={() => setGenFreq(n)}
+                  className={`flex-1 rounded-xl py-2 text-sm font-medium transition-all ${
+                    genFreq === n ? "gradient-primary text-primary-foreground shadow-primary" : "bg-secondary text-secondary-foreground"
+                  }`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+
+            <p className="text-xs font-medium text-foreground mb-2">Durée</p>
+            <div className="flex gap-2 mb-4">
+              {[7, 14, 30].map((d) => (
+                <button
+                  key={d}
+                  onClick={() => setGenDays(d)}
+                  className={`flex-1 rounded-xl py-2 text-sm font-medium transition-all ${
+                    genDays === d ? "gradient-primary text-primary-foreground shadow-primary" : "bg-secondary text-secondary-foreground"
+                  }`}
+                >
+                  {d}j
+                </button>
+              ))}
+            </div>
+
+            <Button
+              onClick={handleGenerateEmpty}
+              disabled={generating}
+              variant="outline"
+              className="w-full rounded-xl h-12 text-sm font-semibold border-primary/30 text-primary hover:bg-primary/5"
+            >
+              {generating ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : (
+                <CalendarPlus className="w-4 h-4 mr-2" />
+              )}
+              Générer {genDays * genFreq} créneaux
+            </Button>
+          </div>
         )}
 
         {/* Imported documents list (visible on upload step) */}
