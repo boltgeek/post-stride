@@ -281,63 +281,33 @@ function UploadPage() {
           </label>
         )}
 
-        {/* Generate empty calendar (no document needed) */}
+        {/* Generate empty calendar — coming soon */}
         {step === "upload" && (
-          <div className="mt-6 bg-card rounded-2xl p-4 shadow-card border border-border">
-            <div className="flex items-start gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center flex-shrink-0 shadow-primary">
-                <Sparkles className="w-5 h-5 text-primary-foreground" />
+          <div className="mt-6 bg-card rounded-2xl p-4 shadow-card border border-border opacity-75 relative overflow-hidden">
+            <div className="absolute top-3 right-3">
+              <span className="text-[10px] font-bold uppercase tracking-wide bg-primary/10 text-primary px-2 py-1 rounded-full">
+                Bientôt disponible
+              </span>
+            </div>
+            <div className="flex items-start gap-3 mb-2">
+              <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
+                <Sparkles className="w-5 h-5 text-muted-foreground" />
               </div>
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 pr-20">
                 <p className="text-sm font-semibold text-foreground">Pas de document ?</p>
                 <p className="text-[11px] text-muted-foreground leading-relaxed">
-                  Génère un calendrier vide et rédige tes posts au fur et à mesure.
+                  Bientôt, tu pourras générer un calendrier vide et rédiger tes posts au fur et à mesure.
                 </p>
               </div>
             </div>
 
-            <p className="text-xs font-medium text-foreground mb-2">Posts par jour</p>
-            <div className="flex gap-2 mb-3">
-              {[1, 2, 3, 5].map((n) => (
-                <button
-                  key={n}
-                  onClick={() => setGenFreq(n)}
-                  className={`flex-1 rounded-xl py-2 text-sm font-medium transition-all ${
-                    genFreq === n ? "gradient-primary text-primary-foreground shadow-primary" : "bg-secondary text-secondary-foreground"
-                  }`}
-                >
-                  {n}
-                </button>
-              ))}
-            </div>
-
-            <p className="text-xs font-medium text-foreground mb-2">Durée</p>
-            <div className="flex gap-2 mb-4">
-              {[7, 14, 30].map((d) => (
-                <button
-                  key={d}
-                  onClick={() => setGenDays(d)}
-                  className={`flex-1 rounded-xl py-2 text-sm font-medium transition-all ${
-                    genDays === d ? "gradient-primary text-primary-foreground shadow-primary" : "bg-secondary text-secondary-foreground"
-                  }`}
-                >
-                  {d}j
-                </button>
-              ))}
-            </div>
-
             <Button
-              onClick={handleGenerateEmpty}
-              disabled={generating}
+              disabled
               variant="outline"
-              className="w-full rounded-xl h-12 text-sm font-semibold border-primary/30 text-primary hover:bg-primary/5"
+              className="w-full rounded-xl h-12 text-sm font-semibold mt-3"
             >
-              {generating ? (
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-              ) : (
-                <CalendarPlus className="w-4 h-4 mr-2" />
-              )}
-              Générer {genDays * genFreq} créneaux
+              <CalendarPlus className="w-4 h-4 mr-2" />
+              Bientôt disponible
             </Button>
           </div>
         )}
