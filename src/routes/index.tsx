@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { Upload, Calendar, CheckCircle2, BarChart3, Sparkles, ArrowRight, LogOut, Flame, MessageCircle } from "lucide-react";
+import { Upload, Calendar, CheckCircle2, BarChart3, Sparkles, ArrowRight, LogOut, Flame, MessageCircle, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BottomNav } from "@/components/BottomNav";
 import { useAuth } from "@/lib/auth";
@@ -76,6 +76,9 @@ function Home() {
                 <span className="text-sm font-bold text-foreground">{totalPoints}</span>
               </div>
             )}
+            <Link to="/account" className="p-2 rounded-xl hover:bg-accent transition-colors" aria-label="Mon compte">
+              <Settings className="w-4 h-4 text-muted-foreground" />
+            </Link>
             <button onClick={signOut} className="p-2 rounded-xl hover:bg-accent transition-colors" aria-label="Se déconnecter">
               <LogOut className="w-4 h-4 text-muted-foreground" />
             </button>
