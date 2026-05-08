@@ -281,6 +281,67 @@ function UploadPage() {
           </label>
         )}
 
+        {/* Generate empty calendar (no document needed) */}
+        {step === "upload" && (
+          <div className="mt-6 bg-card rounded-2xl p-4 shadow-card border border-border">
+            <div className="flex items-start gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center flex-shrink-0 shadow-primary">
+                <Sparkles className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-foreground">Pas de document ?</p>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  Génère un calendrier vide et rédige tes posts au fur et à mesure.
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs font-medium text-foreground mb-2">Posts par jour</p>
+            <div className="flex gap-2 mb-3">
+              {[1, 2, 3, 5].map((n) => (
+                <button
+                  key={n}
+                  onClick={() => setGenFreq(n)}
+                  className={`flex-1 rounded-xl py-2 text-sm font-medium transition-all ${
+                    genFreq === n ? "gradient-primary text-primary-foreground shadow-primary" : "bg-secondary text-secondary-foreground"
+                  }`}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+
+            <p className="text-xs font-medium text-foreground mb-2">Durée</p>
+            <div className="flex gap-2 mb-4">
+              {[7, 14, 30].map((d) => (
+                <button
+                  key={d}
+                  onClick={() => setGenDays(d)}
+                  className={`flex-1 rounded-xl py-2 text-sm font-medium transition-all ${
+                    genDays === d ? "gradient-primary text-primary-foreground shadow-primary" : "bg-secondary text-secondary-foreground"
+                  }`}
+                >
+                  {d}j
+                </button>
+              ))}
+            </div>
+
+            <Button
+              onClick={handleGenerateEmpty}
+              disabled={generating}
+              variant="outline"
+              className="w-full rounded-xl h-12 text-sm font-semibold border-primary/30 text-primary hover:bg-primary/5"
+            >
+              {generating ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : (
+                <CalendarPlus className="w-4 h-4 mr-2" />
+              )}
+              Générer {genDays * genFreq} créneaux
+            </Button>
+          </div>
+        )}
+
         {/* Imported documents list (visible on upload step) */}
         {step === "upload" && documents.length > 0 && (
           <div className="mt-6">
