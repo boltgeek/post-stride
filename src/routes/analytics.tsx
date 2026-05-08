@@ -10,7 +10,7 @@ export const Route = createFileRoute("/analytics")({
   component: AnalyticsPage,
   head: () => ({
     meta: [
-      { title: "Classement — PostPilot" },
+      { title: "Classement — Routine Post" },
       { name: "description", content: "Classement des vendeuses les plus actives" },
     ],
   }),

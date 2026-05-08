@@ -25,7 +25,7 @@ export const Route = createFileRoute("/calendar")({
   component: CalendarPage,
   head: () => ({
     meta: [
-      { title: "Calendrier — PostPilot" },
+      { title: "Calendrier — Routine Post" },
       { name: "description", content: "Ton calendrier éditorial : publie tes posts du jour" },
     ],
   }),

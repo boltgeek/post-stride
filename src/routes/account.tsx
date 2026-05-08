@@ -10,7 +10,7 @@ export const Route = createFileRoute("/account")({
   component: AccountPage,
   head: () => ({
     meta: [
-      { title: "Mon compte — PostPilot" },
+      { title: "Mon compte — Routine Post" },
       { name: "description", content: "Gère ton compte et ton mot de passe" },
     ],
   }),

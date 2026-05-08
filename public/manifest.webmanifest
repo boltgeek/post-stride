@@ -1,6 +1,6 @@
 {
-  "name": "PostPilot — Ton assistant contenu",
-  "short_name": "PostPilot",
+  "name": "Routine Post — Ton assistant contenu",
+  "short_name": "Routine Post",
   "description": "Poste chaque jour sans réfléchir. Ton CM automatique pour vendeuses Facebook.",
   "start_url": "/",
   "scope": "/",
