@@ -53,6 +53,48 @@ function UploadPage() {
   const queryClient = useQueryClient();
   const [docToDelete, setDocToDelete] = useState<ImportedDocument | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [genFreq, setGenFreq] = useState(1);
+  const [genDays, setGenDays] = useState(7);
+  const [generating, setGenerating] = useState(false);
+
+  const handleGenerateEmpty = async () => {
+    if (!user) return;
+    setGenerating(true);
+    try {
+      await setPostsPerDay(user.id, genFreq);
+      const times = ["09:00", "13:00", "18:00", "08:00", "11:00"];
+      const startDate = new Date();
+      const newPosts = [];
+      for (let d = 0; d < genDays; d++) {
+        for (let i = 0; i < genFreq; i++) {
+          const date = new Date(startDate);
+          date.setDate(date.getDate() + d);
+          newPosts.push({
+            content: "✍️ Rédige ton post ici. Clique sur l'icône crayon pour modifier.",
+            scheduledDate: date.toISOString().slice(0, 10),
+            scheduledTime: times[i] || times[0],
+            status: "pending" as const,
+          });
+        }
+      }
+      const documentId = await createImportedDocument(
+        user.id,
+        `Calendrier vierge — ${genDays}j × ${genFreq}/j`,
+        "Calendrier généré sans document. Remplis chaque post à la main.",
+        newPosts.length
+      );
+      await addPosts(user.id, newPosts, documentId);
+      invalidate();
+      queryClient.invalidateQueries({ queryKey: ["imported-documents"] });
+      toast.success(`${newPosts.length} créneaux créés`);
+      navigate({ to: "/calendar" });
+    } catch (err: any) {
+      console.error("Generate error:", err);
+      toast.error("Erreur lors de la génération");
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   const documentsQuery = useQuery({
     queryKey: ["imported-documents"],
