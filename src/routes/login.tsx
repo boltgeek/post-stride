@@ -77,6 +77,9 @@ function LoginPage() {
           </div>
           <h1 className="text-2xl font-bold text-foreground">Routine Post</h1>
           <p className="text-sm text-muted-foreground mt-1">Ton assistant contenu</p>
+          <p className="text-sm text-muted-foreground mt-3 mb-2 px-2 leading-relaxed">
+            Poste chaque jour sans réfléchir — ton CM automatique pour vendeuses Facebook.
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
