@@ -26,7 +26,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Award daily-login challenge points (deferred to avoid blocking auth)
       if (session?.user) {
         setTimeout(() => {
-          supabase.rpc("register_daily_login").then(() => {}).catch(() => {});
+          (supabase.rpc("register_daily_login") as any).then(() => {}, () => {});
         }, 0);
       }
     });
