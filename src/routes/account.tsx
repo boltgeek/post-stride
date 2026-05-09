@@ -79,6 +79,8 @@ function AccountPage() {
           </div>
         </header>
 
+        <BadgesSection userId={user.id} />
+
         <div className="bg-card rounded-2xl p-5 shadow-card border border-border animate-slide-up">
           <h2 className="text-sm font-bold text-foreground mb-1 uppercase tracking-wide">
             Changer mon mot de passe
