@@ -180,6 +180,38 @@ export type Database = {
           },
         ]
       }
+      user_badges: {
+        Row: {
+          awarded_at: string
+          badge_type: string
+          challenge_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          awarded_at?: string
+          badge_type: string
+          challenge_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          awarded_at?: string
+          badge_type?: string
+          challenge_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_badges_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_stats: {
         Row: {
           challenges_created_this_month: number
@@ -236,6 +268,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_challenge_score: {
+        Args: { _kind: string; _user_id: string }
+        Returns: undefined
+      }
+      close_expired_challenges: { Args: never; Returns: number }
       get_leaderboard: {
         Args: never
         Returns: {
@@ -261,6 +298,7 @@ export type Database = {
         }[]
       }
       increment_copy_count: { Args: never; Returns: undefined }
+      register_daily_login: { Args: never; Returns: undefined }
       reset_monthly_challenge_counter: { Args: never; Returns: undefined }
     }
     Enums: {

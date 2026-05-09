@@ -79,6 +79,8 @@ function AccountPage() {
           </div>
         </header>
 
+        <BadgesSection userId={user.id} />
+
         <div className="bg-card rounded-2xl p-5 shadow-card border border-border animate-slide-up">
           <h2 className="text-sm font-bold text-foreground mb-1 uppercase tracking-wide">
             Changer mon mot de passe
@@ -134,3 +136,51 @@ function AccountPage() {
     </div>
   );
 }
+
+const BADGE_META: Record<string, { emoji: string; label: string }> = {
+  championne: { emoji: "👑", label: "Championne" },
+  finaliste: { emoji: "🥈", label: "Finaliste" },
+  top3: { emoji: "🥉", label: "Top 3" },
+};
+
+function BadgesSection({ userId }: { userId: string }) {
+  const [badges, setBadges] = useState<Array<{ id: string; badge_type: string; awarded_at: string; titre: string | null }>>([]);
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("user_badges")
+        .select("id, badge_type, awarded_at, challenge_id")
+        .eq("user_id", userId)
+        .order("awarded_at", { ascending: false });
+      const list = data ?? [];
+      const ids = list.map((b: any) => b.challenge_id);
+      const titres: Record<string, string> = {};
+      if (ids.length) {
+        const { data: chs } = await supabase.from("challenges").select("id, titre").in("id", ids);
+        (chs ?? []).forEach((c: any) => (titres[c.id] = c.titre));
+      }
+      setBadges(list.map((b: any) => ({ ...b, titre: titres[b.challenge_id] ?? null })));
+    })();
+  }, [userId]);
+  if (badges.length === 0) return null;
+  return (
+    <div className="bg-card rounded-2xl p-5 shadow-card border border-border mb-4">
+      <h2 className="text-sm font-bold text-foreground mb-3 uppercase tracking-wide">Mes badges</h2>
+      <div className="flex flex-wrap gap-2">
+        {badges.map((b) => {
+          const meta = BADGE_META[b.badge_type] ?? { emoji: "🏅", label: b.badge_type };
+          return (
+            <div key={b.id} className="flex items-center gap-2 bg-primary/5 border border-primary/20 rounded-full px-3 py-1.5">
+              <span className="text-lg" aria-hidden>{meta.emoji}</span>
+              <div className="leading-tight">
+                <p className="text-xs font-semibold text-foreground">{meta.label}</p>
+                {b.titre && <p className="text-[10px] text-muted-foreground">{b.titre}</p>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+

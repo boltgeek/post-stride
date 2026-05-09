@@ -55,7 +55,7 @@ export async function fetchChallenges(): Promise<Challenge[]> {
   const { data: challenges, error } = await supabase
     .from("challenges")
     .select("*")
-    .eq("actif", true)
+    .order("actif", { ascending: false })
     .order("created_at", { ascending: false });
   if (error) throw error;
 
