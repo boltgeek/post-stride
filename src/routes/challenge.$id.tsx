@@ -18,6 +18,7 @@ function ChallengePage() {
   const { id } = Route.useParams();
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [adminOpen, setAdminOpen] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) navigate({ to: "/login" });
