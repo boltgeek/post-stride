@@ -149,9 +149,28 @@ function ChallengePage() {
   return (
     <div className="min-h-screen bg-background pb-24">
       <div className="max-w-lg mx-auto px-4 pt-6">
-        <Link to="/analytics" className="inline-flex items-center gap-1 text-sm text-muted-foreground mb-4">
-          <ArrowLeft className="w-4 h-4" /> Retour
-        </Link>
+        <div className="flex items-center justify-between mb-4">
+          <Link to="/analytics" className="inline-flex items-center gap-1 text-sm text-muted-foreground">
+            <ArrowLeft className="w-4 h-4" /> Retour
+          </Link>
+          {isOrganizer && (
+            <button
+              onClick={() => setAdminOpen(true)}
+              className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border border-border bg-card text-foreground"
+            >
+              <Settings className="w-3.5 h-3.5" /> Gérer
+            </button>
+          )}
+        </div>
+
+        {mySuspendedUntil && (
+          <div className="bg-warning/10 border border-warning/30 rounded-2xl p-4 mb-4">
+            <p className="text-sm font-semibold text-foreground">
+              ⏸ Tu es temporairement suspendue jusqu'au {mySuspendedUntil.toLocaleString("fr-FR")}.
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">Tu ne gagnes pas de points pendant cette période.</p>
+          </div>
+        )}
 
         {isClosed && winner && (
           <div className="bg-warning/10 border border-warning/30 rounded-2xl p-4 mb-4">
