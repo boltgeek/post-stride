@@ -244,29 +244,7 @@ export async function publishPost(postId: string) {
     .eq("user_id", userId);
   if (statsError) throw statsError;
 
-  // Increment score in all active joined challenges based on their scoring_rules.post
-  try {
-    const todayStr = t;
-    const { data: parts } = await supabase
-      .from("challenge_participants")
-      .select("id, challenge_id, score, challenges:challenge_id(actif, date_debut, date_fin, scoring_rules)")
-      .eq("user_id", userId);
-    for (const p of (parts ?? []) as any[]) {
-      const c = p.challenges;
-      if (!c || !c.actif) continue;
-      if (c.date_debut && todayStr < c.date_debut) continue;
-      if (c.date_fin && todayStr > c.date_fin) continue;
-      const inc = Number(c.scoring_rules?.post ?? 0);
-      if (!inc) continue;
-      await supabase
-        .from("challenge_participants")
-        .update({ score: (p.score ?? 0) + inc })
-        .eq("id", p.id);
-    }
-  } catch (e) {
-    console.error("challenge scoring failed", e);
-  }
-}
+  // Challenge scoring is now handled automatically by DB trigger on posts.status='published'.
 
 export async function skipPost(postId: string) {
   const { error } = await supabase
