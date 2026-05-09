@@ -1,7 +1,9 @@
+import { useEffect } from "react";
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/lib/auth";
 import { Toaster } from "@/components/ui/sonner";
+import { InstallPrompt } from "@/components/InstallPrompt";
 
 import appCss from "../styles.css?url";
 
@@ -87,10 +89,44 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!("serviceWorker" in navigator)) return;
+
+    // Detect Lovable preview / iframe contexts — never register SW there.
+    const inIframe = (() => {
+      try {
+        return window.self !== window.top;
+      } catch {
+        return true;
+      }
+    })();
+    const host = window.location.hostname;
+    const isPreview =
+      host.includes("lovableproject.com") ||
+      host.includes("id-preview--") ||
+      host.includes("lovable.dev");
+
+    if (inIframe || isPreview) {
+      // Make sure no stale SW lingers in preview contexts.
+      navigator.serviceWorker.getRegistrations().then((regs) => {
+        regs.forEach((r) => r.unregister());
+      });
+      return;
+    }
+
+    if (!import.meta.env.PROD) return;
+
+    navigator.serviceWorker.register("/sw.js").catch(() => {
+      /* ignore */
+    });
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <Outlet />
+        <InstallPrompt />
         <Toaster />
       </AuthProvider>
     </QueryClientProvider>
