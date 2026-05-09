@@ -14,6 +14,95 @@ export type Database = {
   }
   public: {
     Tables: {
+      challenge_participants: {
+        Row: {
+          challenge_id: string
+          email: string | null
+          id: string
+          joined_at: string
+          prenom: string | null
+          score: number
+          type_compte: string
+          user_id: string | null
+        }
+        Insert: {
+          challenge_id: string
+          email?: string | null
+          id?: string
+          joined_at?: string
+          prenom?: string | null
+          score?: number
+          type_compte?: string
+          user_id?: string | null
+        }
+        Update: {
+          challenge_id?: string
+          email?: string | null
+          id?: string
+          joined_at?: string
+          prenom?: string | null
+          score?: number
+          type_compte?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_participants_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      challenges: {
+        Row: {
+          actif: boolean
+          created_at: string
+          created_by: string
+          date_debut: string
+          date_fin: string
+          description: string | null
+          id: string
+          message_bienvenue: string | null
+          prive: boolean
+          scoring_rules: Json
+          slug: string
+          titre: string
+          type: string
+        }
+        Insert: {
+          actif?: boolean
+          created_at?: string
+          created_by: string
+          date_debut?: string
+          date_fin: string
+          description?: string | null
+          id?: string
+          message_bienvenue?: string | null
+          prive?: boolean
+          scoring_rules?: Json
+          slug: string
+          titre: string
+          type?: string
+        }
+        Update: {
+          actif?: boolean
+          created_at?: string
+          created_by?: string
+          date_debut?: string
+          date_fin?: string
+          description?: string | null
+          id?: string
+          message_bienvenue?: string | null
+          prive?: boolean
+          scoring_rules?: Json
+          slug?: string
+          titre?: string
+          type?: string
+        }
+        Relationships: []
+      }
       imported_documents: {
         Row: {
           created_at: string
@@ -93,6 +182,7 @@ export type Database = {
       }
       user_stats: {
         Row: {
+          challenges_created_this_month: number
           copy_count: number
           created_at: string
           display_name: string | null
@@ -108,6 +198,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          challenges_created_this_month?: number
           copy_count?: number
           created_at?: string
           display_name?: string | null
@@ -123,6 +214,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          challenges_created_this_month?: number
           copy_count?: number
           created_at?: string
           display_name?: string | null
@@ -156,7 +248,20 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_leaderboard_period: {
+        Args: { _limit?: number; _offset?: number; _period?: string }
+        Returns: {
+          copy_count: number
+          display_name: string
+          is_current_user: boolean
+          publish_count: number
+          rank: number
+          total_score: number
+          user_id: string
+        }[]
+      }
       increment_copy_count: { Args: never; Returns: undefined }
+      reset_monthly_challenge_counter: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

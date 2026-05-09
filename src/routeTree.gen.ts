@@ -16,6 +16,8 @@ import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ChallengeCreateRouteImport } from './routes/challenge.create'
+import { Route as ChallengeIdRouteImport } from './routes/challenge.$id'
 
 const UploadRoute = UploadRouteImport.update({
   id: '/upload',
@@ -52,6 +54,16 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ChallengeCreateRoute = ChallengeCreateRouteImport.update({
+  id: '/challenge/create',
+  path: '/challenge/create',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChallengeIdRoute = ChallengeIdRouteImport.update({
+  id: '/challenge/$id',
+  path: '/challenge/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -61,6 +73,8 @@ export interface FileRoutesByFullPath {
   '/coach': typeof CoachRoute
   '/login': typeof LoginRoute
   '/upload': typeof UploadRoute
+  '/challenge/$id': typeof ChallengeIdRoute
+  '/challenge/create': typeof ChallengeCreateRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -70,6 +84,8 @@ export interface FileRoutesByTo {
   '/coach': typeof CoachRoute
   '/login': typeof LoginRoute
   '/upload': typeof UploadRoute
+  '/challenge/$id': typeof ChallengeIdRoute
+  '/challenge/create': typeof ChallengeCreateRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -80,6 +96,8 @@ export interface FileRoutesById {
   '/coach': typeof CoachRoute
   '/login': typeof LoginRoute
   '/upload': typeof UploadRoute
+  '/challenge/$id': typeof ChallengeIdRoute
+  '/challenge/create': typeof ChallengeCreateRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -91,6 +109,8 @@ export interface FileRouteTypes {
     | '/coach'
     | '/login'
     | '/upload'
+    | '/challenge/$id'
+    | '/challenge/create'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -100,6 +120,8 @@ export interface FileRouteTypes {
     | '/coach'
     | '/login'
     | '/upload'
+    | '/challenge/$id'
+    | '/challenge/create'
   id:
     | '__root__'
     | '/'
@@ -109,6 +131,8 @@ export interface FileRouteTypes {
     | '/coach'
     | '/login'
     | '/upload'
+    | '/challenge/$id'
+    | '/challenge/create'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -119,6 +143,8 @@ export interface RootRouteChildren {
   CoachRoute: typeof CoachRoute
   LoginRoute: typeof LoginRoute
   UploadRoute: typeof UploadRoute
+  ChallengeIdRoute: typeof ChallengeIdRoute
+  ChallengeCreateRoute: typeof ChallengeCreateRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -172,6 +198,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/challenge/create': {
+      id: '/challenge/create'
+      path: '/challenge/create'
+      fullPath: '/challenge/create'
+      preLoaderRoute: typeof ChallengeCreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/challenge/$id': {
+      id: '/challenge/$id'
+      path: '/challenge/$id'
+      fullPath: '/challenge/$id'
+      preLoaderRoute: typeof ChallengeIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -183,6 +223,8 @@ const rootRouteChildren: RootRouteChildren = {
   CoachRoute: CoachRoute,
   LoginRoute: LoginRoute,
   UploadRoute: UploadRoute,
+  ChallengeIdRoute: ChallengeIdRoute,
+  ChallengeCreateRoute: ChallengeCreateRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
