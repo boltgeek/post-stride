@@ -327,8 +327,9 @@ function ChallengesView() {
   const list = challenges ?? [];
   const officiel = list.find((c) => c.type === "officiel" && c.actif);
   const community = list
-    .filter((c) => c.type === "communautaire")
+    .filter((c) => c.type === "communautaire" && c.actif)
     .sort((a, b) => (b.participant_count ?? 0) - (a.participant_count ?? 0));
+  const archived = list.filter((c) => !c.actif);
 
   return (
     <div className="relative pb-20">
@@ -351,6 +352,31 @@ function ChallengesView() {
             <CommunityCard key={c.id} challenge={c} onChange={refetch} />
           ))}
         </div>
+      )}
+
+      {archived.length > 0 && (
+        <>
+          <div className="flex items-center gap-2 mb-3 mt-6">
+            <Trophy className="w-4 h-4 text-muted-foreground" />
+            <h2 className="text-sm font-bold text-muted-foreground">Terminés</h2>
+          </div>
+          <div className="grid gap-3 opacity-80">
+            {archived.map((c) => (
+              <Link
+                key={c.id}
+                to="/challenge/$id"
+                params={{ id: c.id }}
+                className="bg-card border border-border rounded-xl p-3 flex items-center justify-between"
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-foreground truncate">{c.titre}</p>
+                  <p className="text-[11px] text-muted-foreground">Terminé · {c.participant_count ?? 0} participantes</p>
+                </div>
+                <span className="text-lg">🏆</span>
+              </Link>
+            ))}
+          </div>
+        </>
       )}
 
       <Link
