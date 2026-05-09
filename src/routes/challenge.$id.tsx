@@ -1,11 +1,12 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Share2, Loader2, Trophy } from "lucide-react";
+import { ArrowLeft, Share2, Loader2, Trophy, Settings } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { joinChallenge, daysRemaining, type Challenge } from "@/lib/challenges";
 import { BottomNav } from "@/components/BottomNav";
+import { ChallengeAdminPanel } from "@/components/ChallengeAdminPanel";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/challenge/$id")({
