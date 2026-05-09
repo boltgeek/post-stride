@@ -272,7 +272,7 @@ function LeaderboardView({
 function Podium({ top3 }: { top3: LeaderboardRow[] }) {
   const order = [top3[1], top3[0], top3[2]].filter(Boolean);
   const heights = ["h-20", "h-28", "h-16"];
-  const emojis = ["🥈", "👑", "🥉"];
+  const emojis = ["👑", "🥈", "🥉"];
   return (
     <div className="flex items-end justify-center gap-3">
       {order.map((row, i) => {
