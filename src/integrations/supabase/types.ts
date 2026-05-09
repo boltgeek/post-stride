@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      challenge_bans: {
+        Row: {
+          banned_at: string
+          banned_by: string
+          challenge_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          banned_at?: string
+          banned_by: string
+          challenge_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          banned_at?: string
+          banned_by?: string
+          challenge_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       challenge_participants: {
         Row: {
           challenge_id: string
@@ -22,6 +46,7 @@ export type Database = {
           joined_at: string
           prenom: string | null
           score: number
+          suspendue_jusqu_au: string | null
           type_compte: string
           user_id: string | null
         }
@@ -32,6 +57,7 @@ export type Database = {
           joined_at?: string
           prenom?: string | null
           score?: number
+          suspendue_jusqu_au?: string | null
           type_compte?: string
           user_id?: string | null
         }
@@ -42,6 +68,7 @@ export type Database = {
           joined_at?: string
           prenom?: string | null
           score?: number
+          suspendue_jusqu_au?: string | null
           type_compte?: string
           user_id?: string | null
         }
@@ -54,6 +81,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      challenge_penalties: {
+        Row: {
+          applied_at: string
+          applied_by: string
+          challenge_id: string
+          id: string
+          motif: string
+          points_retires: number
+          suspendue_jusqu_au: string | null
+          user_id: string
+        }
+        Insert: {
+          applied_at?: string
+          applied_by: string
+          challenge_id: string
+          id?: string
+          motif: string
+          points_retires?: number
+          suspendue_jusqu_au?: string | null
+          user_id: string
+        }
+        Update: {
+          applied_at?: string
+          applied_by?: string
+          challenge_id?: string
+          id?: string
+          motif?: string
+          points_retires?: number
+          suspendue_jusqu_au?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       challenges: {
         Row: {
@@ -272,7 +332,25 @@ export type Database = {
         Args: { _kind: string; _user_id: string }
         Returns: undefined
       }
+      apply_challenge_penalty: {
+        Args: {
+          _challenge_id: string
+          _motif: string
+          _points: number
+          _suspend_until: string
+          _user_id: string
+        }
+        Returns: undefined
+      }
+      close_challenge_now: {
+        Args: { _challenge_id: string }
+        Returns: undefined
+      }
       close_expired_challenges: { Args: never; Returns: number }
+      delete_challenge_cascade: {
+        Args: { _challenge_id: string }
+        Returns: undefined
+      }
       get_leaderboard: {
         Args: never
         Returns: {
@@ -299,6 +377,10 @@ export type Database = {
       }
       increment_copy_count: { Args: never; Returns: undefined }
       register_daily_login: { Args: never; Returns: undefined }
+      remove_challenge_participant: {
+        Args: { _challenge_id: string; _user_id: string }
+        Returns: undefined
+      }
       reset_monthly_challenge_counter: { Args: never; Returns: undefined }
     }
     Enums: {
