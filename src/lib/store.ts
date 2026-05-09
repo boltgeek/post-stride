@@ -245,6 +245,7 @@ export async function publishPost(postId: string) {
   if (statsError) throw statsError;
 
   // Challenge scoring is now handled automatically by DB trigger on posts.status='published'.
+}
 
 export async function skipPost(postId: string) {
   const { error } = await supabase
