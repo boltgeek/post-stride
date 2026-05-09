@@ -1,11 +1,12 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Share2, Loader2, Trophy } from "lucide-react";
+import { ArrowLeft, Share2, Loader2, Trophy, Settings } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { joinChallenge, daysRemaining, type Challenge } from "@/lib/challenges";
 import { BottomNav } from "@/components/BottomNav";
+import { ChallengeAdminPanel } from "@/components/ChallengeAdminPanel";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/challenge/$id")({
@@ -17,6 +18,7 @@ function ChallengePage() {
   const { id } = Route.useParams();
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [adminOpen, setAdminOpen] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) navigate({ to: "/login" });
@@ -116,6 +118,10 @@ function ChallengePage() {
   const top3 = visibleParts.slice(0, 3);
   const isClosed = !challenge.actif || daysRemaining(challenge.date_fin) === 0;
   const winner = top3[0];
+  const isOrganizer = challenge.created_by === user.id;
+  const mySuspendedUntil = me?.suspendue_jusqu_au && new Date(me.suspendue_jusqu_au) > new Date()
+    ? new Date(me.suspendue_jusqu_au)
+    : null;
 
   // Points needed to climb one rank
   let pointsToNext: number | null = null;
@@ -143,9 +149,28 @@ function ChallengePage() {
   return (
     <div className="min-h-screen bg-background pb-24">
       <div className="max-w-lg mx-auto px-4 pt-6">
-        <Link to="/analytics" className="inline-flex items-center gap-1 text-sm text-muted-foreground mb-4">
-          <ArrowLeft className="w-4 h-4" /> Retour
-        </Link>
+        <div className="flex items-center justify-between mb-4">
+          <Link to="/analytics" className="inline-flex items-center gap-1 text-sm text-muted-foreground">
+            <ArrowLeft className="w-4 h-4" /> Retour
+          </Link>
+          {isOrganizer && (
+            <button
+              onClick={() => setAdminOpen(true)}
+              className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border border-border bg-card text-foreground"
+            >
+              <Settings className="w-3.5 h-3.5" /> Gérer
+            </button>
+          )}
+        </div>
+
+        {mySuspendedUntil && (
+          <div className="bg-warning/10 border border-warning/30 rounded-2xl p-4 mb-4">
+            <p className="text-sm font-semibold text-foreground">
+              ⏸ Tu es temporairement suspendue jusqu'au {mySuspendedUntil.toLocaleString("fr-FR")}.
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">Tu ne gagnes pas de points pendant cette période.</p>
+          </div>
+        )}
 
         {isClosed && winner && (
           <div className="bg-warning/10 border border-warning/30 rounded-2xl p-4 mb-4">
@@ -251,6 +276,16 @@ function ChallengePage() {
           ))}
         </div>
       </div>
+      {adminOpen && (
+        <ChallengeAdminPanel
+          challengeId={challenge.id}
+          challengeTitle={challenge.titre}
+          participants={participants}
+          onClose={() => setAdminOpen(false)}
+          onAfterAction={() => refetch()}
+          onDeleted={() => navigate({ to: "/analytics" })}
+        />
+      )}
       <BottomNav />
     </div>
   );
