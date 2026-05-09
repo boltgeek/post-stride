@@ -276,6 +276,16 @@ function ChallengePage() {
           ))}
         </div>
       </div>
+      {adminOpen && (
+        <ChallengeAdminPanel
+          challengeId={challenge.id}
+          challengeTitle={challenge.titre}
+          participants={participants}
+          onClose={() => setAdminOpen(false)}
+          onAfterAction={() => refetch()}
+          onDeleted={() => navigate({ to: "/analytics" })}
+        />
+      )}
       <BottomNav />
     </div>
   );
