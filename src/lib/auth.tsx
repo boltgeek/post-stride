@@ -23,6 +23,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      // Award daily-login challenge points (deferred to avoid blocking auth)
+      if (session?.user) {
+        setTimeout(() => {
+          supabase.rpc("register_daily_login").then(() => {}).catch(() => {});
+        }, 0);
+      }
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
