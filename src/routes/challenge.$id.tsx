@@ -117,6 +117,10 @@ function ChallengePage() {
   const top3 = visibleParts.slice(0, 3);
   const isClosed = !challenge.actif || daysRemaining(challenge.date_fin) === 0;
   const winner = top3[0];
+  const isOrganizer = challenge.created_by === user.id;
+  const mySuspendedUntil = me?.suspendue_jusqu_au && new Date(me.suspendue_jusqu_au) > new Date()
+    ? new Date(me.suspendue_jusqu_au)
+    : null;
 
   // Points needed to climb one rank
   let pointsToNext: number | null = null;
