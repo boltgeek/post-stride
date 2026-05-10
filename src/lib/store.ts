@@ -156,19 +156,42 @@ export interface ImportedDocument {
   createdAt: string;
 }
 
+export const LEGACY_DOC_ID = "__legacy__";
+
 export async function fetchImportedDocuments(): Promise<ImportedDocument[]> {
   const { data, error } = await supabase
     .from("imported_documents")
     .select("*")
     .order("created_at", { ascending: false });
   if (error) throw error;
-  return (data || []).map((r: any) => ({
+  const docs = (data || []).map((r: any) => ({
     id: r.id,
     fileName: r.file_name,
     summary: r.summary,
     postCount: r.post_count,
     createdAt: r.created_at,
   }));
+
+  // Detect legacy posts (imported before document tracking — document_id IS NULL)
+  const { data: userData } = await supabase.auth.getUser();
+  const uid = userData?.user?.id;
+  if (uid) {
+    const { count } = await supabase
+      .from("posts")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", uid)
+      .is("document_id", null);
+    if ((count ?? 0) > 0) {
+      docs.push({
+        id: LEGACY_DOC_ID,
+        fileName: "Posts importés (avant)",
+        summary: "Posts importés avant le suivi par document. Supprime-les pour éviter les doublons.",
+        postCount: count ?? 0,
+        createdAt: new Date(0).toISOString(),
+      });
+    }
+  }
+  return docs;
 }
 
 export async function createImportedDocument(userId: string, fileName: string, summary: string, postCount: number): Promise<string> {
