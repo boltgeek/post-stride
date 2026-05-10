@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Lock, Loader2, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { Lock, Loader2, ArrowLeft, CheckCircle2, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BottomNav } from "@/components/BottomNav";
 import { useAuth } from "@/lib/auth";
@@ -17,7 +17,7 @@ export const Route = createFileRoute("/account")({
 });
 
 function AccountPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
 
   const [password, setPassword] = useState("");
@@ -65,18 +65,31 @@ function AccountPage() {
   return (
     <div className="min-h-screen bg-background pb-24">
       <div className="max-w-lg mx-auto px-4 pt-6">
-        <header className="mb-6 flex items-center gap-3">
-          <button
-            onClick={() => navigate({ to: "/" })}
-            className="p-2 -ml-2 rounded-xl hover:bg-accent transition-colors"
-            aria-label="Retour"
-          >
-            <ArrowLeft className="w-5 h-5 text-foreground" />
-          </button>
-          <div>
-            <h1 className="text-xl font-bold text-foreground">Mon compte</h1>
-            <p className="text-xs text-muted-foreground">{user.email}</p>
+        <header className="mb-6 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <button
+              onClick={() => navigate({ to: "/calendar" })}
+              className="p-2 -ml-2 rounded-xl hover:bg-accent transition-colors"
+              aria-label="Retour"
+            >
+              <ArrowLeft className="w-5 h-5 text-foreground" />
+            </button>
+            <div className="min-w-0">
+              <h1 className="text-xl font-bold text-foreground">Mon compte</h1>
+              <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+            </div>
           </div>
+          <button
+            onClick={async () => {
+              await signOut();
+              navigate({ to: "/" });
+            }}
+            className="flex items-center gap-1.5 text-xs font-semibold text-destructive border border-destructive/30 rounded-xl px-3 py-2 hover:bg-destructive/10 transition-colors flex-shrink-0"
+            aria-label="Se déconnecter"
+          >
+            <LogOut className="w-4 h-4" />
+            Déconnexion
+          </button>
         </header>
 
         <BadgesSection userId={user.id} />
