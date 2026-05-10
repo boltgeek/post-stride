@@ -1,220 +1,241 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { Upload, Calendar, CheckCircle2, BarChart3, Sparkles, ArrowRight, LogOut, Flame, MessageCircle, Settings } from "lucide-react";
+import { Sparkles, Upload, Calendar, Bot, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { BottomNav } from "@/components/BottomNav";
 import { useAuth } from "@/lib/auth";
-import { useAppData } from "@/hooks/use-app-data";
+import heroImage from "@/assets/landing-hero.jpg";
+import avatar1 from "@/assets/avatar-1.png";
+import avatar2 from "@/assets/avatar-2.png";
 
 export const Route = createFileRoute("/")({
-  component: Home,
+  component: Landing,
   head: () => ({
     meta: [
-      { title: "Routine Post — Ton assistant contenu" },
-      { name: "description", content: "Poste chaque jour sans réfléchir. Ton CM automatique." },
+      { title: "Routine Post — Ton assistant contenu Facebook" },
+      {
+        name: "description",
+        content:
+          "Importe ton contenu, organise ton calendrier et reste régulière sur Facebook — sans stress. Gratuit, sans carte bancaire.",
+      },
+      { property: "og:title", content: "Routine Post — Ton assistant contenu" },
+      {
+        property: "og:description",
+        content: "Poste chaque jour, sans réfléchir. Ton CM automatique pour Facebook.",
+      },
+      { property: "og:image", content: heroImage },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
+    links: [{ rel: "canonical", href: "https://routinepost.com/" }],
   }),
 });
 
-const steps = [
-  {
-    icon: Upload,
-    title: "Importe ton contenu",
-    desc: "Ajoute tes posts pré-écrits (texte, Word, PDF). Routine Post les organise pour toi.",
-  },
-  {
-    icon: Calendar,
-    title: "Suis ton calendrier",
-    desc: "Chaque jour, retrouve tes posts à publier dans la page Calendrier.",
-  },
-  {
-    icon: CheckCircle2,
-    title: "Copie et publie",
-    desc: "Un clic pour copier ton post, colle-le sur Facebook, marque comme publié.",
-  },
-  {
-    icon: BarChart3,
-    title: "Suis tes stats",
-    desc: "Note les réactions et commentaires pour voir ce qui marche le mieux.",
-  },
-];
-
-function Home() {
-  const { user, loading: authLoading, signOut } = useAuth();
+function Landing() {
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const { posts, totalPoints, loading } = useAppData();
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      navigate({ to: "/login" });
+    if (!loading && user) {
+      navigate({ to: "/calendar" });
     }
-  }, [authLoading, user, navigate]);
-
-  if (authLoading || loading || !user) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  const hasPosts = posts.length > 0;
+  }, [loading, user, navigate]);
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      <div className="max-w-lg mx-auto px-4 pt-6">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-xl font-bold text-foreground">Routine Post</h1>
-            <p className="text-xs text-muted-foreground">Ton assistant contenu</p>
-          </div>
-          <div className="flex items-center gap-2">
-            {hasPosts && (
-              <div className="flex items-center gap-1 bg-accent rounded-full px-3 py-1.5">
-                <Flame className="w-4 h-4 text-primary" />
-                <span className="text-sm font-bold text-foreground">{totalPoints}</span>
-              </div>
-            )}
-            <Link to="/account" className="p-2 rounded-xl hover:bg-accent transition-colors" aria-label="Mon compte">
-              <Settings className="w-4 h-4 text-muted-foreground" />
+    <div className="min-h-screen" style={{ backgroundColor: "#F5F0EB" }}>
+      {/* Nav */}
+      <header className="w-full">
+        <nav className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-2">
+            <span
+              className="w-9 h-9 rounded-xl flex items-center justify-center"
+              style={{ backgroundColor: "#E8521A" }}
+            >
+              <Sparkles className="w-5 h-5 text-white" />
+            </span>
+            <span className="text-lg font-extrabold tracking-tight text-neutral-900">
+              Routine Post
+            </span>
+          </Link>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link to="/login">
+              <Button
+                variant="outline"
+                className="rounded-xl border-neutral-300 text-neutral-900 hover:bg-white font-semibold"
+              >
+                Connexion
+              </Button>
             </Link>
-            <button onClick={signOut} className="p-2 rounded-xl hover:bg-accent transition-colors" aria-label="Se déconnecter">
-              <LogOut className="w-4 h-4 text-muted-foreground" />
-            </button>
+            <Link to="/login">
+              <Button
+                className="rounded-xl text-white font-semibold shadow-sm"
+                style={{ backgroundColor: "#E8521A" }}
+              >
+                Commencer gratuitement
+              </Button>
+            </Link>
           </div>
+        </nav>
+      </header>
+
+      {/* Hero */}
+      <section className="max-w-3xl mx-auto px-6 pt-10 pb-16 text-center">
+        <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-neutral-900 leading-[1.05]">
+          Poste chaque jour,
+          <br />
+          sans réfléchir
+        </h1>
+        <p className="mt-6 text-base sm:text-lg text-neutral-700 max-w-xl mx-auto">
+          Importe ton contenu, organise ton calendrier et reste régulière sur Facebook — sans stress.
+        </p>
+        <div className="mt-8 flex justify-center">
+          <Link to="/login">
+            <Button
+              className="rounded-xl text-white font-bold h-14 px-8 text-base shadow-md hover:opacity-95"
+              style={{ backgroundColor: "#E8521A" }}
+            >
+              Commencer gratuitement
+            </Button>
+          </Link>
         </div>
+        <p className="mt-4 text-sm text-neutral-600">
+          ✓ Gratuit &nbsp;•&nbsp; ✓ Sans carte bancaire &nbsp;•&nbsp; ✓ Prêt en 2 minutes
+        </p>
 
-        {/* Hero */}
-        <section className="text-center mb-8 animate-slide-up">
-          <div className="inline-flex w-16 h-16 rounded-2xl gradient-primary items-center justify-center mb-4 shadow-primary">
-            <Sparkles className="w-8 h-8 text-primary-foreground" />
-          </div>
-          <h2 className="text-2xl font-bold text-foreground mb-2 leading-tight">
-            Poste chaque jour, sans réfléchir
-          </h2>
-          <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-            Routine Post t'aide à publier ton contenu Facebook au bon moment, garder ta régularité et faire grandir tes ventes.
-          </p>
-        </section>
+        <div className="mt-12 flex justify-center">
+          <img
+            src={heroImage}
+            alt="Entrepreneuse souriante utilisant Routine Post sur son ordinateur"
+            width={1024}
+            height={768}
+            className="rounded-2xl shadow-xl w-full max-w-2xl object-cover"
+          />
+        </div>
+      </section>
 
-        {/* Main CTA */}
-        <Link to={hasPosts ? "/calendar" : "/upload"} className="block mb-8">
-          <Button className="w-full rounded-xl gradient-primary text-primary-foreground shadow-primary h-14 text-base font-semibold">
-            {hasPosts ? (
-              <>
-                <Calendar className="w-5 h-5 mr-2" />
-                Aller à mon calendrier
-              </>
-            ) : (
-              <>
-                <Upload className="w-5 h-5 mr-2" />
-                Commencer — Importer mon contenu
-              </>
-            )}
-          </Button>
-        </Link>
-
-        {/* How it works */}
-        <section className="mb-6">
-          <h3 className="text-sm font-bold text-foreground mb-1 uppercase tracking-wide">
+      {/* How it works */}
+      <section className="max-w-5xl mx-auto px-6 py-16">
+        <div className="text-center mb-10">
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-neutral-900">
             Comment ça marche
-          </h3>
-          <p className="text-xs text-muted-foreground mb-4">4 étapes simples pour démarrer</p>
+          </h2>
+          <p className="mt-2 text-neutral-600">2 étapes simples pour démarrer</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {[
+            {
+              n: 1,
+              icon: Upload,
+              avatar: avatar1,
+              title: "Importe ton contenu",
+              desc: "Ajoute tes posts pré-écrits (texte, Word ou PDF). Routine Post les organise pour toi.",
+            },
+            {
+              n: 2,
+              icon: Calendar,
+              avatar: avatar2,
+              title: "Suis ton calendrier",
+              desc: "Visualise tous tes posts jour par jour et ne rate plus jamais une publication.",
+            },
+          ].map((s) => (
+            <div
+              key={s.n}
+              className="bg-white rounded-2xl p-7 shadow-sm border border-neutral-200 relative"
+            >
+              <div
+                className="absolute -top-4 left-7 w-9 h-9 rounded-full text-white font-bold flex items-center justify-center shadow"
+                style={{ backgroundColor: "#E8521A" }}
+              >
+                {s.n}
+              </div>
+              <div className="flex items-start gap-4">
+                <img
+                  src={s.avatar}
+                  alt=""
+                  loading="lazy"
+                  width={64}
+                  height={64}
+                  className="w-16 h-16 rounded-full object-cover flex-shrink-0"
+                  style={{ backgroundColor: "#F5F0EB" }}
+                />
+                <div>
+                  <h3 className="text-lg font-bold text-neutral-900 mb-1">{s.title}</h3>
+                  <p className="text-sm text-neutral-700 leading-relaxed">{s.desc}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
 
-          <div className="space-y-3">
-            {steps.map((step, i) => {
-              const Icon = step.icon;
-              return (
-                <div
-                  key={step.title}
-                  className="bg-card rounded-2xl p-4 shadow-card border border-border flex gap-3 items-start animate-slide-up"
+      {/* Coming soon */}
+      <section style={{ backgroundColor: "#FBE6DA" }}>
+        <div className="max-w-5xl mx-auto px-6 py-16">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-neutral-900">
+              Bientôt disponible 🚀
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {[
+              {
+                icon: Bot,
+                title: "🤖 Génération de contenu par IA",
+                desc: "L'IA créera ton calendrier de posts en quelques secondes.",
+              },
+              {
+                icon: Send,
+                title: "📲 Publication directe sur Facebook",
+                desc: "Publie sur ta Page Facebook directement depuis l'app.",
+              },
+            ].map((f) => (
+              <div
+                key={f.title}
+                className="bg-white/70 rounded-2xl p-7 border border-neutral-200 opacity-80 relative"
+              >
+                <span
+                  className="absolute top-4 right-4 text-[11px] font-bold px-2.5 py-1 rounded-full text-white"
+                  style={{ backgroundColor: "#E8521A" }}
                 >
-                  <div className="flex-shrink-0 relative">
-                    <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center">
-                      <Icon className="w-5 h-5 text-primary" />
-                    </div>
-                    <span className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center shadow-primary">
-                      {i + 1}
-                    </span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground mb-0.5">{step.title}</p>
-                    <p className="text-xs text-muted-foreground leading-relaxed">{step.desc}</p>
-                  </div>
-                </div>
-              );
-            })}
+                  Bientôt
+                </span>
+                <h3 className="text-lg font-bold text-neutral-700 mb-2 pr-20">{f.title}</h3>
+                <p className="text-sm text-neutral-600 leading-relaxed">{f.desc}</p>
+              </div>
+            ))}
           </div>
-        </section>
+          <p className="text-center text-sm text-neutral-700 mt-8">
+            Tu seras notifiée dès que ces fonctionnalités sont disponibles.
+          </p>
+        </div>
+      </section>
 
-        {/* Quick links */}
-        <section className="mt-6">
-          <h3 className="text-sm font-bold text-foreground mb-3 uppercase tracking-wide">
-            {hasPosts ? "Continuer" : "Quoi faire en premier"}
-          </h3>
-          <div className="space-y-2">
-            <Link to="/upload" className="block">
-              <div className="bg-card rounded-2xl p-4 shadow-card border border-border flex items-center justify-between hover:shadow-card-hover transition-shadow">
-                <div className="flex items-center gap-3">
-                  <Upload className="w-5 h-5 text-primary" />
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">Importer du contenu</p>
-                    <p className="text-[11px] text-muted-foreground">Ajoute tes posts pré-écrits</p>
-                  </div>
-                </div>
-                <ArrowRight className="w-4 h-4 text-muted-foreground" />
-              </div>
-            </Link>
-
-            {hasPosts && (
-              <>
-                <Link to="/calendar" className="block">
-                  <div className="bg-card rounded-2xl p-4 shadow-card border border-border flex items-center justify-between hover:shadow-card-hover transition-shadow">
-                    <div className="flex items-center gap-3">
-                      <Calendar className="w-5 h-5 text-primary" />
-                      <div>
-                        <p className="text-sm font-semibold text-foreground">Mon calendrier</p>
-                        <p className="text-[11px] text-muted-foreground">Voir et publier mes posts du jour</p>
-                      </div>
-                    </div>
-                    <ArrowRight className="w-4 h-4 text-muted-foreground" />
-                  </div>
-                </Link>
-
-                <Link to="/analytics" className="block">
-                  <div className="bg-card rounded-2xl p-4 shadow-card border border-border flex items-center justify-between hover:shadow-card-hover transition-shadow">
-                    <div className="flex items-center gap-3">
-                      <BarChart3 className="w-5 h-5 text-primary" />
-                      <div>
-                        <p className="text-sm font-semibold text-foreground">Mes statistiques</p>
-                        <p className="text-[11px] text-muted-foreground">Découvre ce qui marche</p>
-                      </div>
-                    </div>
-                    <ArrowRight className="w-4 h-4 text-muted-foreground" />
-                  </div>
-                </Link>
-              </>
-            )}
-
-            <Link to="/coach" className="block">
-              <div className="bg-card rounded-2xl p-4 shadow-card border border-border flex items-center justify-between hover:shadow-card-hover transition-shadow">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-[#25D366]/15 flex items-center justify-center">
-                    <MessageCircle className="w-5 h-5 text-[#25D366]" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">Contacter ma coach</p>
-                    <p className="text-[11px] text-muted-foreground">Une question ? Écris sur WhatsApp</p>
-                  </div>
-                </div>
-                <ArrowRight className="w-4 h-4 text-muted-foreground" />
-              </div>
+      {/* Final CTA */}
+      <section style={{ backgroundColor: "#E8521A" }}>
+        <div className="max-w-3xl mx-auto px-6 py-20 text-center">
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-white">
+            Prête à rester régulière sur Facebook ?
+          </h2>
+          <div className="mt-8 flex justify-center">
+            <Link to="/login">
+              <Button className="rounded-xl bg-white text-neutral-900 hover:bg-neutral-100 font-bold h-14 px-8 text-base shadow-md">
+                Créer mon compte gratuitement
+              </Button>
             </Link>
           </div>
-        </section>
-      </div>
-      <BottomNav />
+          <p className="mt-4 text-sm text-white/90">Gratuit • Sans carte bancaire</p>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-neutral-200">
+        <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-sm text-neutral-600">© 2025 Routine Post</p>
+          <nav className="flex items-center gap-6 text-sm text-neutral-700">
+            <a href="/privacy" className="hover:text-neutral-900">Politique de confidentialité</a>
+            <a href="/terms" className="hover:text-neutral-900">Conditions d'utilisation</a>
+            <Link to="/coach" className="hover:text-neutral-900">Contact</Link>
+          </nav>
+        </div>
+      </footer>
     </div>
   );
 }
