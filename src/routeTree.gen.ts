@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UploadRouteImport } from './routes/upload'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as HomeRouteImport } from './routes/home'
 import { Route as CoachRouteImport } from './routes/coach'
 import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
@@ -27,6 +28,11 @@ const UploadRoute = UploadRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HomeRoute = HomeRouteImport.update({
+  id: '/home',
+  path: '/home',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CoachRoute = CoachRouteImport.update({
@@ -71,6 +77,7 @@ export interface FileRoutesByFullPath {
   '/analytics': typeof AnalyticsRoute
   '/calendar': typeof CalendarRoute
   '/coach': typeof CoachRoute
+  '/home': typeof HomeRoute
   '/login': typeof LoginRoute
   '/upload': typeof UploadRoute
   '/challenge/$id': typeof ChallengeIdRoute
@@ -82,6 +89,7 @@ export interface FileRoutesByTo {
   '/analytics': typeof AnalyticsRoute
   '/calendar': typeof CalendarRoute
   '/coach': typeof CoachRoute
+  '/home': typeof HomeRoute
   '/login': typeof LoginRoute
   '/upload': typeof UploadRoute
   '/challenge/$id': typeof ChallengeIdRoute
@@ -94,6 +102,7 @@ export interface FileRoutesById {
   '/analytics': typeof AnalyticsRoute
   '/calendar': typeof CalendarRoute
   '/coach': typeof CoachRoute
+  '/home': typeof HomeRoute
   '/login': typeof LoginRoute
   '/upload': typeof UploadRoute
   '/challenge/$id': typeof ChallengeIdRoute
@@ -107,6 +116,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/calendar'
     | '/coach'
+    | '/home'
     | '/login'
     | '/upload'
     | '/challenge/$id'
@@ -118,6 +128,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/calendar'
     | '/coach'
+    | '/home'
     | '/login'
     | '/upload'
     | '/challenge/$id'
@@ -129,6 +140,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/calendar'
     | '/coach'
+    | '/home'
     | '/login'
     | '/upload'
     | '/challenge/$id'
@@ -141,6 +153,7 @@ export interface RootRouteChildren {
   AnalyticsRoute: typeof AnalyticsRoute
   CalendarRoute: typeof CalendarRoute
   CoachRoute: typeof CoachRoute
+  HomeRoute: typeof HomeRoute
   LoginRoute: typeof LoginRoute
   UploadRoute: typeof UploadRoute
   ChallengeIdRoute: typeof ChallengeIdRoute
@@ -161,6 +174,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/home': {
+      id: '/home'
+      path: '/home'
+      fullPath: '/home'
+      preLoaderRoute: typeof HomeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/coach': {
@@ -221,6 +241,7 @@ const rootRouteChildren: RootRouteChildren = {
   AnalyticsRoute: AnalyticsRoute,
   CalendarRoute: CalendarRoute,
   CoachRoute: CoachRoute,
+  HomeRoute: HomeRoute,
   LoginRoute: LoginRoute,
   UploadRoute: UploadRoute,
   ChallengeIdRoute: ChallengeIdRoute,

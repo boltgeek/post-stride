@@ -35,7 +35,7 @@ function Landing() {
 
   useEffect(() => {
     if (!loading && user) {
-      navigate({ to: "/calendar" });
+      navigate({ to: "/home" });
     }
   }, [loading, user, navigate]);
 

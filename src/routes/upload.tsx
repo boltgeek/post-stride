@@ -214,7 +214,7 @@ function UploadPage() {
       await addPosts(user.id, newPosts, documentId);
       invalidate();
       queryClient.invalidateQueries({ queryKey: ["imported-documents"] });
-      navigate({ to: "/" });
+      navigate({ to: "/calendar" });
     } catch (err) {
       console.error("Import error:", err);
     } finally {
