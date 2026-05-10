@@ -205,6 +205,18 @@ export async function createImportedDocument(userId: string, fileName: string, s
 }
 
 export async function deleteImportedDocument(documentId: string) {
+  if (documentId === LEGACY_DOC_ID) {
+    const { data: userData } = await supabase.auth.getUser();
+    const uid = userData?.user?.id;
+    if (!uid) throw new Error("Non authentifié");
+    const { error } = await supabase
+      .from("posts")
+      .delete()
+      .eq("user_id", uid)
+      .is("document_id", null);
+    if (error) throw error;
+    return;
+  }
   // Delete associated posts first
   const { error: postsError } = await supabase
     .from("posts")
