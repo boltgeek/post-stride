@@ -80,8 +80,8 @@ function Landing() {
       </header>
 
       {/* Hero */}
-      <section className="max-w-3xl mx-auto px-6 pt-10 pb-16 text-center">
-        <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-neutral-900 leading-[1.05]">
+      <section className="max-w-3xl mx-auto px-4 sm:px-6 pt-8 sm:pt-10 pb-12 sm:pb-16 text-center">
+        <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-neutral-900 leading-[1.1] sm:leading-[1.05]">
           Poste chaque jour,
           <br />
           sans réfléchir
