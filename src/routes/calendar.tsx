@@ -126,9 +126,9 @@ function CalendarPage() {
             <div className="w-20 h-20 rounded-full gradient-primary flex items-center justify-center mb-6 shadow-primary">
               <CalendarIcon className="w-10 h-10 text-primary-foreground" />
             </div>
-            <h2 className="text-lg font-bold text-foreground mb-2">Aucun contenu planifié</h2>
+            <h2 className="text-lg font-bold text-foreground mb-2">Aucun post ce mois-ci</h2>
             <p className="text-sm text-muted-foreground mb-8 max-w-xs">
-              Importe d'abord tes posts pré-écrits, puis reviens ici pour les publier au quotidien.
+              Génère ton calendrier ou importe ton contenu pour commencer à publier chaque jour.
             </p>
             <Link to="/upload">
               <Button className="rounded-xl gradient-primary text-primary-foreground shadow-primary h-14 px-8 text-base font-semibold">
