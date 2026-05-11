@@ -29,6 +29,7 @@ export function PostCard({ post, isNext }: PostCardProps) {
   const [acting, setActing] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(post.content);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const invalidate = useInvalidateAppData();
 
   const handleCopy = async () => {
