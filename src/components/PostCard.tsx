@@ -5,6 +5,16 @@ import type { Post } from "@/lib/store";
 import { publishPost, skipPost, updatePostStats, updatePostContent, deletePost } from "@/lib/store";
 import { useInvalidateAppData } from "@/hooks/use-app-data";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface PostCardProps {
   post: Post;
