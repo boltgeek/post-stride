@@ -95,17 +95,40 @@ export function PostCard({ post, isNext }: PostCardProps) {
     }
   };
 
-  const handleDelete = async () => {
+  const doDelete = async () => {
     setActing(true);
     try {
       await deletePost(post.id);
       invalidate();
+      setConfirmDelete(false);
     } catch (err) {
       console.error(err);
     } finally {
       setActing(false);
     }
   };
+
+  const DeleteDialog = (
+    <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+      <AlertDialogContent className="rounded-2xl">
+        <AlertDialogHeader>
+          <AlertDialogTitle>Supprimer ce post ?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Cette action est irréversible. Le post sera supprimé définitivement.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel className="rounded-xl">Annuler</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={doDelete}
+            className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            Confirmer
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
 
   if (post.status === "published" && !showStats) {
     return (
