@@ -56,6 +56,84 @@ function UploadPage() {
   const [genFreq, setGenFreq] = useState(1);
   const [genDays, setGenDays] = useState(7);
   const [generating, setGenerating] = useState(false);
+  // AI generation state
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiBoutique, setAiBoutique] = useState("");
+  const [aiProduits, setAiProduits] = useState("");
+  const [aiPrix, setAiPrix] = useState("");
+  const [aiClientes, setAiClientes] = useState("");
+  const [aiTon, setAiTon] = useState<"Professionnel" | "Amical" | "Maternel" | "Dynamique">("Amical");
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiLastGen, setAiLastGen] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("user_stats").select("last_ai_generation_at").eq("user_id", user.id).maybeSingle()
+      .then(({ data }) => setAiLastGen((data as any)?.last_ai_generation_at || null));
+  }, [user]);
+
+  const aiBlockedUntil = (() => {
+    if (!aiLastGen) return null;
+    const last = new Date(aiLastGen);
+    const next = new Date(last);
+    next.setMonth(next.getMonth() + 1);
+    return next > new Date() ? next : null;
+  })();
+
+  const handleAiGenerate = async () => {
+    if (!user) return;
+    if (!aiBoutique.trim() || !aiProduits.trim()) {
+      toast.error("Renseigne au moins le nom de boutique et ce que tu vends");
+      return;
+    }
+    setAiGenerating(true);
+    try {
+      const { data, error: fnErr } = await supabase.functions.invoke("generate-posts-ai", {
+        body: { boutique: aiBoutique, produits: aiProduits, prix: aiPrix, clientes: aiClientes, ton: aiTon },
+      });
+      if (fnErr) throw new Error(fnErr.message || "Erreur IA");
+      if ((data as any)?.error) throw new Error((data as any).error);
+      const generatedPosts: { content: string }[] = (data as any)?.posts || [];
+      if (generatedPosts.length === 0) throw new Error("Aucun post généré");
+
+      const times = ["09:00", "13:00", "18:00"];
+      const perDay = 1;
+      const startDate = new Date();
+      const newPosts = generatedPosts.map((p, i) => {
+        const dayOffset = Math.floor(i / perDay);
+        const date = new Date(startDate);
+        date.setDate(date.getDate() + dayOffset);
+        return {
+          content: p.content,
+          scheduledDate: date.toISOString().slice(0, 10),
+          scheduledTime: times[i % times.length],
+          status: "pending" as const,
+        };
+      });
+
+      const documentId = await createImportedDocument(
+        user.id,
+        `Calendrier IA — ${aiBoutique}`,
+        `Généré par IA pour ${aiBoutique}`,
+        newPosts.length
+      );
+      await addPosts(user.id, newPosts, documentId);
+
+      const nowIso = new Date().toISOString();
+      await supabase.from("user_stats").update({ last_ai_generation_at: nowIso }).eq("user_id", user.id);
+      setAiLastGen(nowIso);
+
+      invalidate();
+      queryClient.invalidateQueries({ queryKey: ["imported-documents"] });
+      toast.success(`${newPosts.length} posts générés par l'IA 🎉`);
+      navigate({ to: "/calendar" });
+    } catch (err: any) {
+      console.error("AI generate error:", err);
+      toast.error(err.message || "Erreur de génération IA");
+    } finally {
+      setAiGenerating(false);
+    }
+  };
 
   const handleGenerateEmpty = async () => {
     if (!user) return;
