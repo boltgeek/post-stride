@@ -43,24 +43,24 @@ function Landing() {
     <div className="min-h-screen" style={{ backgroundColor: "#F5F0EB" }}>
       {/* Nav */}
       <header className="w-full">
-        <nav className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
+        <nav className="max-w-6xl mx-auto px-3 sm:px-6 py-4 sm:py-5 flex items-center justify-between gap-2">
+          <Link to="/" className="flex items-center gap-2 min-w-0">
             <span
-              className="w-9 h-9 rounded-xl flex items-center justify-center"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center flex-shrink-0"
               style={{ backgroundColor: "#E8521A" }}
             >
-              <Sparkles className="w-5 h-5 text-white" />
+              <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </span>
-            <span className="text-lg font-extrabold tracking-tight text-neutral-900">
+            <span className="text-base sm:text-lg font-extrabold tracking-tight text-neutral-900 truncate">
               Routine Post
             </span>
           </Link>
           <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-            <Link to="/login" className="hidden min-[400px]:inline-flex">
+            <Link to="/login" className="hidden sm:inline-flex">
               <Button
                 variant="outline"
                 size="sm"
-                className="rounded-xl border-neutral-300 text-neutral-900 hover:bg-white font-semibold sm:h-10 sm:px-4"
+                className="rounded-xl border-neutral-300 text-neutral-900 hover:bg-white font-semibold h-10 px-4"
               >
                 Connexion
               </Button>
@@ -68,11 +68,11 @@ function Landing() {
             <Link to="/login">
               <Button
                 size="sm"
-                className="rounded-xl text-white font-semibold shadow-sm whitespace-nowrap sm:h-10 sm:px-4"
+                className="rounded-xl text-white font-semibold shadow-sm whitespace-nowrap h-9 px-3 sm:h-10 sm:px-4 text-xs sm:text-sm"
                 style={{ backgroundColor: "#E8521A" }}
               >
-                <span className="min-[400px]:hidden">Commencer</span>
-                <span className="hidden min-[400px]:inline">Commencer gratuitement</span>
+                <span className="sm:hidden">Commencer</span>
+                <span className="hidden sm:inline">Commencer gratuitement</span>
               </Button>
             </Link>
           </div>
