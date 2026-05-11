@@ -375,14 +375,21 @@ function UploadPage() {
             </div>
 
             {!aiOpen ? (
-              <Button
-                onClick={() => setAiOpen(true)}
-                disabled={!!aiBlockedUntil}
-                className="w-full rounded-xl gradient-primary text-primary-foreground shadow-primary h-12 text-sm font-semibold"
-              >
-                <Sparkles className="w-4 h-4 mr-2" />
-                Générer avec l'IA
-              </Button>
+              <>
+                <Button
+                  onClick={() => setAiOpen(true)}
+                  className="w-full rounded-xl gradient-primary text-primary-foreground shadow-primary h-12 text-sm font-semibold"
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Générer avec l'IA
+                </Button>
+                {aiBlockedUntil && (
+                  <p className="mt-2 text-[11px] text-muted-foreground text-center">
+                    1 génération / mois — prochaine le{" "}
+                    <strong>{aiBlockedUntil.toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}</strong>
+                  </p>
+                )}
+              </>
             ) : aiBlockedUntil ? (
               <p className="text-xs text-muted-foreground bg-muted rounded-xl p-3 text-center">
                 Tu as déjà généré ton calendrier ce mois-ci. Prochain calendrier disponible le{" "}
