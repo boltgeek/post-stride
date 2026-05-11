@@ -155,18 +155,21 @@ export function PostCard({ post, isNext }: PostCardProps) {
 
   if (post.status === "skipped") {
     return (
-      <div className="bg-card rounded-2xl p-4 shadow-card border border-border opacity-50 animate-slide-up">
-        <div className="flex items-center gap-2 mb-2">
-          <div className="w-6 h-6 rounded-full bg-destructive/10 flex items-center justify-center">
-            <X className="w-3.5 h-3.5 text-destructive" />
+      <>
+        <div className="bg-card rounded-2xl p-4 shadow-card border border-border opacity-50 animate-slide-up">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-6 h-6 rounded-full bg-destructive/10 flex items-center justify-center">
+              <X className="w-3.5 h-3.5 text-destructive" />
+            </div>
+            <span className="text-xs font-medium text-destructive">Ignoré</span>
+            <button onClick={() => setConfirmDelete(true)} disabled={acting} className="ml-auto p-1 rounded-lg hover:bg-destructive/10 transition-colors">
+              <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
+            </button>
           </div>
-          <span className="text-xs font-medium text-destructive">Ignoré</span>
-          <button onClick={handleDelete} disabled={acting} className="ml-auto p-1 rounded-lg hover:bg-destructive/10 transition-colors">
-            <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
-          </button>
+          <p className="text-sm text-muted-foreground line-clamp-2">{post.content}</p>
         </div>
-        <p className="text-sm text-muted-foreground line-clamp-2">{post.content}</p>
-      </div>
+        {DeleteDialog}
+      </>
     );
   }
 
