@@ -55,21 +55,24 @@ function Landing() {
               Routine Post
             </span>
           </Link>
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Link to="/login">
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+            <Link to="/login" className="hidden min-[400px]:inline-flex">
               <Button
                 variant="outline"
-                className="rounded-xl border-neutral-300 text-neutral-900 hover:bg-white font-semibold"
+                size="sm"
+                className="rounded-xl border-neutral-300 text-neutral-900 hover:bg-white font-semibold sm:h-10 sm:px-4"
               >
                 Connexion
               </Button>
             </Link>
             <Link to="/login">
               <Button
-                className="rounded-xl text-white font-semibold shadow-sm"
+                size="sm"
+                className="rounded-xl text-white font-semibold shadow-sm whitespace-nowrap sm:h-10 sm:px-4"
                 style={{ backgroundColor: "#E8521A" }}
               >
-                Commencer gratuitement
+                <span className="min-[400px]:hidden">Commencer</span>
+                <span className="hidden min-[400px]:inline">Commencer gratuitement</span>
               </Button>
             </Link>
           </div>

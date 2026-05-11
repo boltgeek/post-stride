@@ -280,6 +280,7 @@ export type Database = {
           display_name: string | null
           id: string
           last_active_date: string | null
+          last_ai_generation_at: string | null
           level: number
           longest_streak: number
           posts_per_day: number
@@ -296,6 +297,7 @@ export type Database = {
           display_name?: string | null
           id?: string
           last_active_date?: string | null
+          last_ai_generation_at?: string | null
           level?: number
           longest_streak?: number
           posts_per_day?: number
@@ -312,6 +314,7 @@ export type Database = {
           display_name?: string | null
           id?: string
           last_active_date?: string | null
+          last_ai_generation_at?: string | null
           level?: number
           longest_streak?: number
           posts_per_day?: number

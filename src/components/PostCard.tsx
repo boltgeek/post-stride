@@ -5,6 +5,16 @@ import type { Post } from "@/lib/store";
 import { publishPost, skipPost, updatePostStats, updatePostContent, deletePost } from "@/lib/store";
 import { useInvalidateAppData } from "@/hooks/use-app-data";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface PostCardProps {
   post: Post;
@@ -19,6 +29,7 @@ export function PostCard({ post, isNext }: PostCardProps) {
   const [acting, setActing] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(post.content);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const invalidate = useInvalidateAppData();
 
   const handleCopy = async () => {
@@ -84,17 +95,40 @@ export function PostCard({ post, isNext }: PostCardProps) {
     }
   };
 
-  const handleDelete = async () => {
+  const doDelete = async () => {
     setActing(true);
     try {
       await deletePost(post.id);
       invalidate();
+      setConfirmDelete(false);
     } catch (err) {
       console.error(err);
     } finally {
       setActing(false);
     }
   };
+
+  const DeleteDialog = (
+    <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+      <AlertDialogContent className="rounded-2xl">
+        <AlertDialogHeader>
+          <AlertDialogTitle>Supprimer ce post ?</AlertDialogTitle>
+          <AlertDialogDescription>
+            Cette action est irréversible. Le post sera supprimé définitivement.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel className="rounded-xl">Annuler</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={doDelete}
+            className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
+            Confirmer
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
 
   if (post.status === "published" && !showStats) {
     return (
@@ -121,18 +155,21 @@ export function PostCard({ post, isNext }: PostCardProps) {
 
   if (post.status === "skipped") {
     return (
-      <div className="bg-card rounded-2xl p-4 shadow-card border border-border opacity-50 animate-slide-up">
-        <div className="flex items-center gap-2 mb-2">
-          <div className="w-6 h-6 rounded-full bg-destructive/10 flex items-center justify-center">
-            <X className="w-3.5 h-3.5 text-destructive" />
+      <>
+        <div className="bg-card rounded-2xl p-4 shadow-card border border-border opacity-50 animate-slide-up">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-6 h-6 rounded-full bg-destructive/10 flex items-center justify-center">
+              <X className="w-3.5 h-3.5 text-destructive" />
+            </div>
+            <span className="text-xs font-medium text-destructive">Ignoré</span>
+            <button onClick={() => setConfirmDelete(true)} disabled={acting} className="ml-auto p-1 rounded-lg hover:bg-destructive/10 transition-colors">
+              <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
+            </button>
           </div>
-          <span className="text-xs font-medium text-destructive">Ignoré</span>
-          <button onClick={handleDelete} disabled={acting} className="ml-auto p-1 rounded-lg hover:bg-destructive/10 transition-colors">
-            <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
-          </button>
+          <p className="text-sm text-muted-foreground line-clamp-2">{post.content}</p>
         </div>
-        <p className="text-sm text-muted-foreground line-clamp-2">{post.content}</p>
-      </div>
+        {DeleteDialog}
+      </>
     );
   }
 
@@ -187,35 +224,38 @@ export function PostCard({ post, isNext }: PostCardProps) {
   }
 
   return (
-    <div className={`bg-card rounded-2xl p-5 shadow-card border animate-slide-up ${isNext ? "border-primary shadow-primary" : "border-border"}`}>
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-          <Clock className="w-3.5 h-3.5" /> {post.scheduledTime}
-        </span>
-        <div className="flex items-center gap-1">
-          {isNext && (
-            <span className="text-[10px] font-bold text-primary-foreground bg-primary px-2 py-0.5 rounded-full animate-pulse-glow">MAINTENANT</span>
-          )}
-          <button onClick={() => setEditing(true)} className="p-1.5 rounded-lg hover:bg-accent transition-colors">
-            <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
-          </button>
-          <button onClick={handleDelete} disabled={acting} className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors">
-            <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
-          </button>
+    <>
+      <div className={`bg-card rounded-2xl p-5 shadow-card border animate-slide-up ${isNext ? "border-primary shadow-primary" : "border-border"}`}>
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+            <Clock className="w-3.5 h-3.5" /> {post.scheduledTime}
+          </span>
+          <div className="flex items-center gap-1">
+            {isNext && (
+              <span className="text-[10px] font-bold text-primary-foreground bg-primary px-2 py-0.5 rounded-full animate-pulse-glow">MAINTENANT</span>
+            )}
+            <button onClick={() => setEditing(true)} className="p-1.5 rounded-lg hover:bg-accent transition-colors">
+              <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+            </button>
+            <button onClick={() => setConfirmDelete(true)} disabled={acting} className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors">
+              <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
+            </button>
+          </div>
+        </div>
+        <p className="text-sm text-foreground leading-relaxed mb-4 whitespace-pre-wrap">{post.content}</p>
+        <div className="flex gap-2">
+          <Button onClick={handlePublish} disabled={acting} className="flex-1 rounded-xl gradient-primary text-primary-foreground shadow-primary h-12 text-base font-semibold">
+            <Check className="w-5 h-5 mr-1" /> Publié ✓
+          </Button>
+          <Button variant="outline" onClick={handleCopy} className="rounded-xl h-12 px-4">
+            {copied ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
+          </Button>
+          <Button variant="ghost" onClick={handleSkip} disabled={acting} className="rounded-xl h-12 px-4 text-muted-foreground">
+            <X className="w-4 h-4" />
+          </Button>
         </div>
       </div>
-      <p className="text-sm text-foreground leading-relaxed mb-4 whitespace-pre-wrap">{post.content}</p>
-      <div className="flex gap-2">
-        <Button onClick={handlePublish} disabled={acting} className="flex-1 rounded-xl gradient-primary text-primary-foreground shadow-primary h-12 text-base font-semibold">
-          <Check className="w-5 h-5 mr-1" /> Publié ✓
-        </Button>
-        <Button variant="outline" onClick={handleCopy} className="rounded-xl h-12 px-4">
-          {copied ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
-        </Button>
-        <Button variant="ghost" onClick={handleSkip} disabled={acting} className="rounded-xl h-12 px-4 text-muted-foreground">
-          <X className="w-4 h-4" />
-        </Button>
-      </div>
-    </div>
+      {DeleteDialog}
+    </>
   );
 }
