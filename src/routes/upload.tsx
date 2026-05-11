@@ -359,34 +359,80 @@ function UploadPage() {
           </label>
         )}
 
-        {/* Generate empty calendar — coming soon */}
+        {/* AI generation */}
         {step === "upload" && (
-          <div className="mt-6 bg-card rounded-2xl p-4 shadow-card border border-border opacity-75 relative overflow-hidden">
-            <div className="absolute top-3 right-3">
-              <span className="text-[10px] font-bold uppercase tracking-wide bg-primary/10 text-primary px-2 py-1 rounded-full">
-                Bientôt disponible
-              </span>
-            </div>
-            <div className="flex items-start gap-3 mb-2">
-              <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
-                <Sparkles className="w-5 h-5 text-muted-foreground" />
+          <div className="mt-6 bg-card rounded-2xl p-4 shadow-card border border-border">
+            <div className="flex items-start gap-3 mb-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <Sparkles className="w-5 h-5 text-primary" />
               </div>
-              <div className="flex-1 min-w-0 pr-20">
+              <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-foreground">Pas de document ?</p>
                 <p className="text-[11px] text-muted-foreground leading-relaxed">
-                  Bientôt, tu pourras générer un calendrier vide et rédiger tes posts au fur et à mesure.
+                  Génère 30 posts Facebook adaptés à ta boutique avec l'IA.
                 </p>
               </div>
             </div>
 
-            <Button
-              disabled
-              variant="outline"
-              className="w-full rounded-xl h-12 text-sm font-semibold mt-3"
-            >
-              <CalendarPlus className="w-4 h-4 mr-2" />
-              Bientôt disponible
-            </Button>
+            {!aiOpen ? (
+              <Button
+                onClick={() => setAiOpen(true)}
+                disabled={!!aiBlockedUntil}
+                className="w-full rounded-xl gradient-primary text-primary-foreground shadow-primary h-12 text-sm font-semibold"
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                Générer avec l'IA
+              </Button>
+            ) : aiBlockedUntil ? (
+              <p className="text-xs text-muted-foreground bg-muted rounded-xl p-3 text-center">
+                Tu as déjà généré ton calendrier ce mois-ci. Prochain calendrier disponible le{" "}
+                <strong>{aiBlockedUntil.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}</strong>.
+              </p>
+            ) : (
+              <div className="space-y-3 animate-slide-up">
+                <div>
+                  <label className="text-[11px] font-semibold text-foreground">Nom de ta boutique</label>
+                  <input value={aiBoutique} onChange={(e) => setAiBoutique(e.target.value)} disabled={aiGenerating} placeholder="Ex: Chez Aïcha"
+                    className="w-full mt-1 rounded-xl border border-input bg-background px-3 py-2 text-sm" />
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold text-foreground">Ce que tu vends</label>
+                  <textarea value={aiProduits} onChange={(e) => setAiProduits(e.target.value)} disabled={aiGenerating} placeholder="Ex: pagnes wax, bijoux artisanaux, sacs en raphia"
+                    className="w-full mt-1 rounded-xl border border-input bg-background px-3 py-2 text-sm resize-none min-h-[60px]" />
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold text-foreground">Tes prix moyens</label>
+                  <input value={aiPrix} onChange={(e) => setAiPrix(e.target.value)} disabled={aiGenerating} placeholder="Ex: 5 000 - 15 000 FCFA"
+                    className="w-full mt-1 rounded-xl border border-input bg-background px-3 py-2 text-sm" />
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold text-foreground">Tes clientes cibles</label>
+                  <input value={aiClientes} onChange={(e) => setAiClientes(e.target.value)} disabled={aiGenerating} placeholder="Ex: femmes 25-45 ans actives"
+                    className="w-full mt-1 rounded-xl border border-input bg-background px-3 py-2 text-sm" />
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold text-foreground">Ton de communication</label>
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    {(["Professionnel", "Amical", "Maternel", "Dynamique"] as const).map((t) => (
+                      <label key={t} className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-xs cursor-pointer transition-all ${
+                        aiTon === t ? "border-primary bg-primary/5 font-semibold text-foreground" : "border-input text-muted-foreground"
+                      }`}>
+                        <input type="radio" name="ton" value={t} checked={aiTon === t} onChange={() => setAiTon(t)} disabled={aiGenerating} className="accent-primary" />
+                        {t}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <Button onClick={handleAiGenerate} disabled={aiGenerating}
+                  className="w-full rounded-xl gradient-primary text-primary-foreground shadow-primary h-12 text-sm font-semibold">
+                  {aiGenerating ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Génération en cours...</>) : (<><Sparkles className="w-4 h-4 mr-2" /> Générer mes 30 posts</>)}
+                </Button>
+                {!aiGenerating && (
+                  <button onClick={() => setAiOpen(false)} className="w-full text-xs text-muted-foreground py-1">Annuler</button>
+                )}
+              </div>
+            )}
           </div>
         )}
 
