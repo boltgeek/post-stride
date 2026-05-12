@@ -152,3 +152,26 @@
 .animate-streak-fire { animation: streak-fire 1s ease-in-out infinite; }
 .animate-slide-up { animation: slide-up 0.4s ease-out forwards; }
 .animate-confetti-pop { animation: confetti-pop 0.5s ease-out forwards; }
+
+@keyframes confetti-fall {
+  0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(120px) rotate(540deg); opacity: 0; }
+}
+.confetti-piece {
+  position: absolute;
+  width: 8px;
+  height: 14px;
+  border-radius: 2px;
+  top: 0;
+  animation: confetti-fall 1.6s ease-out forwards;
+}
+
+@keyframes streak-bounce {
+  0% { transform: scale(0.6); opacity: 0; }
+  60% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.animate-streak-bounce { animation: streak-bounce 0.6s ease-out forwards; }
+
+.tap-press { transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.tap-press:active { transform: scale(0.97); }
