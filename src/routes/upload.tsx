@@ -23,9 +23,9 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/upload")({
   component: UploadPage,
-  validateSearch: (search: Record<string, unknown>) => ({
-    ai: search.ai === "1" || search.ai === 1 ? "1" : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): { ai?: "1" } => {
+    return search.ai === "1" || search.ai === 1 ? { ai: "1" } : {};
+  },
   head: () => ({
     meta: [
       { title: "Importer — Routine Post" },
