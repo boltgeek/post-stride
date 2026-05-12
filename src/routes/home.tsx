@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Copy, Check, Calendar as CalIcon, Sparkles, ArrowRight, Trophy, Flame, Loader2 } from "lucide-react";
+import { Copy, Check, Calendar as CalIcon, Sparkles, ArrowRight, Trophy, Flame, Loader2, Upload } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
 import { useAuth } from "@/lib/auth";
 import { useAppData, useInvalidateAppData } from "@/hooks/use-app-data";
