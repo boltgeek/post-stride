@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Copy, Check, Calendar as CalIcon, Sparkles, ArrowRight, Trophy, Flame, Loader2 } from "lucide-react";
+import { Copy, Check, Calendar as CalIcon, Sparkles, ArrowRight, Trophy, Flame, Loader2, Upload } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
 import { useAuth } from "@/lib/auth";
 import { useAppData, useInvalidateAppData } from "@/hooks/use-app-data";
@@ -338,13 +338,21 @@ function HomePage() {
         {/* SECTION 5 — Quick action */}
         <section className="animate-slide-up" style={{ animationDelay: "240ms" }}>
           {!hasAnyContent ? (
-            <Link
-              to="/upload"
-              search={{ ai: "1" }}
-              className="w-full flex items-center justify-center gap-2 rounded-2xl gradient-primary text-primary-foreground shadow-primary py-4 text-base font-bold tap-press"
-            >
-              <Sparkles className="w-5 h-5" /> ✨ Générer mon calendrier
-            </Link>
+            <div className="flex flex-col gap-3">
+              <Link
+                to="/upload"
+                search={{ ai: "1" }}
+                className="w-full flex items-center justify-center gap-2 rounded-2xl gradient-primary text-primary-foreground shadow-primary py-4 text-base font-bold tap-press"
+              >
+                <Sparkles className="w-5 h-5" /> Générer mon calendrier
+              </Link>
+              <Link
+                to="/upload"
+                className="w-full flex items-center justify-center gap-2 rounded-2xl bg-card border border-border text-foreground py-4 text-base font-bold tap-press"
+              >
+                <Upload className="w-5 h-5" /> Importer mon contenu
+              </Link>
+            </div>
           ) : !publishedToday && todayPost ? (
             <button
               onClick={handlePublish}

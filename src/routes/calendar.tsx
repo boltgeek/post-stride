@@ -132,8 +132,8 @@ function CalendarPage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-3 w-full max-w-md justify-center">
               <Link to="/upload" className="flex-1">
-                <Button variant="outline" className="rounded-xl h-14 px-6 text-base font-semibold w-full">
-                  📄 Importer mon contenu
+                <Button variant="outline" className="rounded-xl h-14 px-6 text-base font-semibold w-full gap-2">
+                  <Upload className="w-5 h-5" /> Importer mon contenu
                 </Button>
               </Link>
               <Link to="/upload" search={{ ai: "1" }} className="flex-1">
