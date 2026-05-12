@@ -23,6 +23,9 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/upload")({
   component: UploadPage,
+  validateSearch: (search: Record<string, unknown>): { ai?: "1" } => {
+    return search.ai === "1" || search.ai === 1 ? { ai: "1" } : {};
+  },
   head: () => ({
     meta: [
       { title: "Importer — Routine Post" },
@@ -57,7 +60,8 @@ function UploadPage() {
   const [genDays, setGenDays] = useState(7);
   const [generating, setGenerating] = useState(false);
   // AI generation state
-  const [aiOpen, setAiOpen] = useState(false);
+  const search = Route.useSearch();
+  const [aiOpen, setAiOpen] = useState(search.ai === "1");
   const [aiBoutique, setAiBoutique] = useState("");
   const [aiProduits, setAiProduits] = useState("");
   const [aiPrix, setAiPrix] = useState("");

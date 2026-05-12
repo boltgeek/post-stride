@@ -128,13 +128,20 @@ function CalendarPage() {
             </div>
             <h2 className="text-lg font-bold text-foreground mb-2">Aucun post ce mois-ci</h2>
             <p className="text-sm text-muted-foreground mb-8 max-w-xs">
-              Génère ton calendrier ou importe ton contenu pour commencer à publier chaque jour.
+              Génère ton calendrier avec l'IA ou importe ton contenu pour commencer à publier chaque jour.
             </p>
-            <Link to="/upload">
-              <Button className="rounded-xl gradient-primary text-primary-foreground shadow-primary h-14 px-8 text-base font-semibold">
-                <Plus className="w-5 h-5 mr-2" /> Importer mon contenu
-              </Button>
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-3 w-full max-w-md justify-center">
+              <Link to="/upload" className="flex-1">
+                <Button variant="outline" className="rounded-xl h-14 px-6 text-base font-semibold w-full">
+                  📄 Importer mon contenu
+                </Button>
+              </Link>
+              <Link to="/upload" search={{ ai: "1" }} className="flex-1">
+                <Button className="rounded-xl gradient-primary text-primary-foreground shadow-primary h-14 px-6 text-base font-semibold w-full">
+                  ✨ Générer avec l'IA
+                </Button>
+              </Link>
+            </div>
           </div>
         ) : (
           <>
