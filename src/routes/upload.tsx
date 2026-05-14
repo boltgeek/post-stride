@@ -103,25 +103,24 @@ function UploadPage() {
       const generatedPosts: { content: string }[] = (data as any)?.posts || [];
       if (generatedPosts.length === 0) throw new Error("Aucun post généré");
 
-      const times = ["09:00", "13:00", "18:00"];
-      const perDay = 1;
+      // Version gratuite : 7 jours × 1 post/jour = 7 posts max
+      const freePosts = generatedPosts.slice(0, 7);
       const startDate = new Date();
-      const newPosts = generatedPosts.map((p, i) => {
-        const dayOffset = Math.floor(i / perDay);
+      const newPosts = freePosts.map((p, i) => {
         const date = new Date(startDate);
-        date.setDate(date.getDate() + dayOffset);
+        date.setDate(date.getDate() + i);
         return {
           content: p.content,
           scheduledDate: date.toISOString().slice(0, 10),
-          scheduledTime: times[i % times.length],
+          scheduledTime: "09:00",
           status: "pending" as const,
         };
       });
 
       const documentId = await createImportedDocument(
         user.id,
-        `Calendrier IA — ${aiBoutique}`,
-        `Généré par IA pour ${aiBoutique}`,
+        `Calendrier IA — ${aiBoutique} (7 jours offerts)`,
+        `Aperçu gratuit (jours 1-7). Débloquez le mois complet pour ${AI_PRICE_FCFA.toLocaleString("fr-FR")} FCFA.`,
         newPosts.length
       );
       await addPosts(user.id, newPosts, documentId);
