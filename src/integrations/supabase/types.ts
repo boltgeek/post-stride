@@ -240,6 +240,48 @@ export type Database = {
           },
         ]
       }
+      purchases: {
+        Row: {
+          amount_fcfa: number
+          created_at: string
+          document_id: string | null
+          id: string
+          plan: string
+          provider: string
+          provider_payload: Json | null
+          reference: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_fcfa: number
+          created_at?: string
+          document_id?: string | null
+          id?: string
+          plan: string
+          provider?: string
+          provider_payload?: Json | null
+          reference: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_fcfa?: number
+          created_at?: string
+          document_id?: string | null
+          id?: string
+          plan?: string
+          provider?: string
+          provider_payload?: Json | null
+          reference?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_badges: {
         Row: {
           awarded_at: string
@@ -274,6 +316,7 @@ export type Database = {
       }
       user_stats: {
         Row: {
+          ai_full_unlocked_at: string | null
           challenges_created_this_month: number
           copy_count: number
           created_at: string
@@ -286,11 +329,14 @@ export type Database = {
           posts_per_day: number
           publish_count: number
           streak: number
+          subscription_plan: string | null
+          subscription_until: string | null
           total_points: number
           updated_at: string
           user_id: string
         }
         Insert: {
+          ai_full_unlocked_at?: string | null
           challenges_created_this_month?: number
           copy_count?: number
           created_at?: string
@@ -303,11 +349,14 @@ export type Database = {
           posts_per_day?: number
           publish_count?: number
           streak?: number
+          subscription_plan?: string | null
+          subscription_until?: string | null
           total_points?: number
           updated_at?: string
           user_id: string
         }
         Update: {
+          ai_full_unlocked_at?: string | null
           challenges_created_this_month?: number
           copy_count?: number
           created_at?: string
@@ -320,6 +369,8 @@ export type Database = {
           posts_per_day?: number
           publish_count?: number
           streak?: number
+          subscription_plan?: string | null
+          subscription_until?: string | null
           total_points?: number
           updated_at?: string
           user_id?: string
