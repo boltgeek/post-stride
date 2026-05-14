@@ -437,9 +437,56 @@ function UploadPage() {
                   </div>
                 </div>
 
+                <div>
+                  <label className="text-[11px] font-semibold text-foreground">Fréquence de publication</label>
+                  <div className="grid grid-cols-5 gap-1.5 mt-1">
+                    {([1, 2, 3, 4, 5] as const).map((n) => (
+                      <button
+                        key={n}
+                        type="button"
+                        onClick={() => setAiFreq(n)}
+                        disabled={aiGenerating}
+                        className={`rounded-xl py-2 text-xs font-semibold transition-all ${
+                          aiFreq === n
+                            ? "gradient-primary text-primary-foreground shadow-primary"
+                            : "bg-secondary text-secondary-foreground"
+                        }`}
+                      >
+                        {n}/j
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-1.5">
+                    {aiFreq * 30} posts pour le mois complet ({aiFreq}/jour × 30 jours)
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-foreground">🎁 Aperçu gratuit</span>
+                    <span className="text-xs font-bold text-primary">7 jours offerts</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-foreground">🔓 Mois complet (jours 8-30)</span>
+                    <span className="text-xs font-bold text-foreground">{AI_PRICE_FCFA.toLocaleString("fr-FR")} FCFA</span>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground leading-relaxed">
+                    Génération gratuite limitée à 1 fois par mois. Le paiement débloque le calendrier complet selon ta fréquence.
+                  </p>
+                </div>
+
                 <Button onClick={handleAiGenerate} disabled={aiGenerating}
                   className="w-full rounded-xl gradient-primary text-primary-foreground shadow-primary h-12 text-sm font-semibold">
-                  {aiGenerating ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Génération en cours...</>) : (<><Sparkles className="w-4 h-4 mr-2" /> Générer mes 30 posts</>)}
+                  {aiGenerating ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Génération en cours...</>) : (<><Sparkles className="w-4 h-4 mr-2" /> Générer mes 7 jours gratuits</>)}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={aiGenerating}
+                  onClick={() => toast.info("Paiement bientôt disponible 💳")}
+                  className="w-full rounded-xl h-11 text-xs font-semibold border-primary/30 text-foreground"
+                >
+                  🔓 Débloquer le mois complet — {AI_PRICE_FCFA.toLocaleString("fr-FR")} FCFA
                 </Button>
                 {!aiGenerating && (
                   <button onClick={() => setAiOpen(false)} className="w-full text-xs text-muted-foreground py-1">Annuler</button>
