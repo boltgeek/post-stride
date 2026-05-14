@@ -67,8 +67,11 @@ function UploadPage() {
   const [aiPrix, setAiPrix] = useState("");
   const [aiClientes, setAiClientes] = useState("");
   const [aiTon, setAiTon] = useState<"Professionnel" | "Amical" | "Maternel" | "Dynamique">("Amical");
+  const [aiFreq, setAiFreq] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [aiGenerating, setAiGenerating] = useState(false);
   const [aiLastGen, setAiLastGen] = useState<string | null>(null);
+
+  const AI_PRICE_FCFA = 2500;
 
   useEffect(() => {
     if (!user) return;
