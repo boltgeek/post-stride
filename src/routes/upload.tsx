@@ -131,7 +131,7 @@ function UploadPage() {
 
       invalidate();
       queryClient.invalidateQueries({ queryKey: ["imported-documents"] });
-      toast.success(`${newPosts.length} posts générés par l'IA 🎉`);
+      toast.success(`7 jours générés gratuitement ! Débloquez le mois complet pour ${AI_PRICE_FCFA.toLocaleString("fr-FR")} FCFA 🎁`);
       navigate({ to: "/calendar" });
     } catch (err: any) {
       console.error("AI generate error:", err);
