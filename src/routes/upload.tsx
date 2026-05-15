@@ -20,6 +20,8 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
+import { createPurchase } from "@/lib/payments.functions";
 
 export const Route = createFileRoute("/upload")({
   component: UploadPage,
@@ -72,6 +74,21 @@ function UploadPage() {
   const [aiLastGen, setAiLastGen] = useState<string | null>(null);
 
   const AI_PRICE_FCFA = 2500;
+  const [unlockingAi, setUnlockingAi] = useState(false);
+  const createPurchaseFn = useServerFn(createPurchase);
+
+  const handleUnlockAiFull = async () => {
+    if (!user) return;
+    setUnlockingAi(true);
+    try {
+      const res = await createPurchaseFn({ data: { plan: "ai_full" } });
+      window.location.href = res.payUrl;
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Impossible d'initier le paiement. Réessaye.");
+      setUnlockingAi(false);
+    }
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -482,11 +499,15 @@ function UploadPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={aiGenerating}
-                  onClick={() => toast.info("Paiement bientôt disponible 💳")}
+                  disabled={aiGenerating || unlockingAi}
+                  onClick={handleUnlockAiFull}
                   className="w-full rounded-xl h-11 text-xs font-semibold border-primary/30 text-foreground"
                 >
-                  🔓 Débloquer le mois complet — {AI_PRICE_FCFA.toLocaleString("fr-FR")} FCFA
+                  {unlockingAi ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Redirection…</>
+                  ) : (
+                    <>🔓 Débloquer le mois complet — {AI_PRICE_FCFA.toLocaleString("fr-FR")} FCFA</>
+                  )}
                 </Button>
                 {!aiGenerating && (
                   <button onClick={() => setAiOpen(false)} className="w-full text-xs text-muted-foreground py-1">Annuler</button>

@@ -1,9 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { MessageCircle, Lightbulb, Target, PenLine, Check } from "lucide-react";
+import { MessageCircle, Lightbulb, Target, PenLine, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BottomNav } from "@/components/BottomNav";
 import { useAuth } from "@/lib/auth";
+import { useServerFn } from "@tanstack/react-start";
+import { createPurchase } from "@/lib/payments.functions";
+import { toast } from "sonner";
 import julienPhoto from "@/assets/julien-biloa.png";
 
 export const Route = createFileRoute("/coach")({
@@ -45,10 +48,25 @@ function CoachPage() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [currency, setCurrency] = useState<Currency>({ code: "FCFA", symbol: "", rate: 1, suffix: " FCFA" });
+  const [buying, setBuying] = useState<string | null>(null);
+  const createPurchaseFn = useServerFn(createPurchase);
 
   useEffect(() => {
     if (!authLoading && !user) navigate({ to: "/login" });
   }, [authLoading, user, navigate]);
+
+  const handleBuyPlan = async (plan: "starter" | "essentielle" | "premium") => {
+    if (!user) return;
+    setBuying(plan);
+    try {
+      const res = await createPurchaseFn({ data: { plan } });
+      window.location.href = res.payUrl;
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Impossible d'initier le paiement. Réessaye.");
+      setBuying(null);
+    }
+  };
 
   useEffect(() => {
     // Détection pays via API gratuite
@@ -82,6 +100,7 @@ function CoachPage() {
 
   const plans = [
     {
+      key: "starter" as const,
       name: "Starter",
       priceFcfa: 12500,
       desc: "Conseils et idées de posts, réponse sous 24h",
@@ -89,6 +108,7 @@ function CoachPage() {
       highlight: false,
     },
     {
+      key: "essentielle" as const,
       name: "Essentielle",
       priceFcfa: 25000,
       desc: "Starter + audit page Facebook/Instagram + stratégie de conversion",
@@ -96,6 +116,7 @@ function CoachPage() {
       highlight: true,
     },
     {
+      key: "premium" as const,
       name: "Premium",
       priceFcfa: 50000,
       desc: "Essentielle + rédaction de posts à ta place + suivi hebdomadaire",
@@ -209,7 +230,7 @@ function CoachPage() {
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground mb-3 leading-relaxed">{p.desc}</p>
-                <ul className="space-y-1.5">
+                <ul className="space-y-1.5 mb-4">
                   {p.features.map((f) => (
                     <li key={f} className="flex items-center gap-2 text-xs text-foreground">
                       <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />
@@ -217,6 +238,21 @@ function CoachPage() {
                     </li>
                   ))}
                 </ul>
+                <Button
+                  onClick={() => handleBuyPlan(p.key)}
+                  disabled={buying !== null}
+                  className={`w-full rounded-xl h-11 text-sm font-semibold ${
+                    p.highlight
+                      ? "gradient-primary text-primary-foreground shadow-primary"
+                      : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                  }`}
+                >
+                  {buying === p.key ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Redirection…</>
+                  ) : (
+                    <>Choisir {p.name}</>
+                  )}
+                </Button>
               </div>
             ))}
           </div>
