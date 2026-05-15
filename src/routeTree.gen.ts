@@ -19,6 +19,7 @@ import { Route as AccountRouteImport } from './routes/account'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ChallengeCreateRouteImport } from './routes/challenge.create'
 import { Route as ChallengeIdRouteImport } from './routes/challenge.$id'
+import { Route as ApiPublicTaramoneyWebhookRouteImport } from './routes/api/public/taramoney-webhook'
 
 const UploadRoute = UploadRouteImport.update({
   id: '/upload',
@@ -70,6 +71,12 @@ const ChallengeIdRoute = ChallengeIdRouteImport.update({
   path: '/challenge/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicTaramoneyWebhookRoute =
+  ApiPublicTaramoneyWebhookRouteImport.update({
+    id: '/api/public/taramoney-webhook',
+    path: '/api/public/taramoney-webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -82,6 +89,7 @@ export interface FileRoutesByFullPath {
   '/upload': typeof UploadRoute
   '/challenge/$id': typeof ChallengeIdRoute
   '/challenge/create': typeof ChallengeCreateRoute
+  '/api/public/taramoney-webhook': typeof ApiPublicTaramoneyWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -94,6 +102,7 @@ export interface FileRoutesByTo {
   '/upload': typeof UploadRoute
   '/challenge/$id': typeof ChallengeIdRoute
   '/challenge/create': typeof ChallengeCreateRoute
+  '/api/public/taramoney-webhook': typeof ApiPublicTaramoneyWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -107,6 +116,7 @@ export interface FileRoutesById {
   '/upload': typeof UploadRoute
   '/challenge/$id': typeof ChallengeIdRoute
   '/challenge/create': typeof ChallengeCreateRoute
+  '/api/public/taramoney-webhook': typeof ApiPublicTaramoneyWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -121,6 +131,7 @@ export interface FileRouteTypes {
     | '/upload'
     | '/challenge/$id'
     | '/challenge/create'
+    | '/api/public/taramoney-webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -133,6 +144,7 @@ export interface FileRouteTypes {
     | '/upload'
     | '/challenge/$id'
     | '/challenge/create'
+    | '/api/public/taramoney-webhook'
   id:
     | '__root__'
     | '/'
@@ -145,6 +157,7 @@ export interface FileRouteTypes {
     | '/upload'
     | '/challenge/$id'
     | '/challenge/create'
+    | '/api/public/taramoney-webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -158,6 +171,7 @@ export interface RootRouteChildren {
   UploadRoute: typeof UploadRoute
   ChallengeIdRoute: typeof ChallengeIdRoute
   ChallengeCreateRoute: typeof ChallengeCreateRoute
+  ApiPublicTaramoneyWebhookRoute: typeof ApiPublicTaramoneyWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -232,6 +246,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChallengeIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/taramoney-webhook': {
+      id: '/api/public/taramoney-webhook'
+      path: '/api/public/taramoney-webhook'
+      fullPath: '/api/public/taramoney-webhook'
+      preLoaderRoute: typeof ApiPublicTaramoneyWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -246,6 +267,7 @@ const rootRouteChildren: RootRouteChildren = {
   UploadRoute: UploadRoute,
   ChallengeIdRoute: ChallengeIdRoute,
   ChallengeCreateRoute: ChallengeCreateRoute,
+  ApiPublicTaramoneyWebhookRoute: ApiPublicTaramoneyWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
