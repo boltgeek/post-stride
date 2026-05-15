@@ -1,9 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { MessageCircle, Lightbulb, Target, PenLine, Check } from "lucide-react";
+import { MessageCircle, Lightbulb, Target, PenLine, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BottomNav } from "@/components/BottomNav";
 import { useAuth } from "@/lib/auth";
+import { useServerFn } from "@tanstack/react-start";
+import { createPurchase } from "@/lib/payments.functions";
+import { toast } from "sonner";
 import julienPhoto from "@/assets/julien-biloa.png";
 
 export const Route = createFileRoute("/coach")({
