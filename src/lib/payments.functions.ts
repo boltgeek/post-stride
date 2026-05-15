@@ -25,7 +25,7 @@ const PlanSchema = z.enum(["starter", "essentielle", "premium", "ai_full"]);
  * reference appended as a query param so the webhook can match it back.
  */
 export const createPurchase = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([attachSupabaseAuth, requireSupabaseAuth])
   .inputValidator((input) =>
     z
       .object({
@@ -61,7 +61,7 @@ export const createPurchase = createServerFn({ method: "POST" })
 
 /** Returns the latest purchase status for the current user (used to poll after payment). */
 export const getLatestPurchaseStatus = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([attachSupabaseAuth, requireSupabaseAuth])
   .inputValidator((input) =>
     z.object({ reference: z.string().min(1) }).parse(input)
   )
