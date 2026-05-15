@@ -230,7 +230,7 @@ function CoachPage() {
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground mb-3 leading-relaxed">{p.desc}</p>
-                <ul className="space-y-1.5">
+                <ul className="space-y-1.5 mb-4">
                   {p.features.map((f) => (
                     <li key={f} className="flex items-center gap-2 text-xs text-foreground">
                       <Check className="w-3.5 h-3.5 text-primary flex-shrink-0" />
@@ -238,7 +238,26 @@ function CoachPage() {
                     </li>
                   ))}
                 </ul>
+                <Button
+                  onClick={() => handleBuyPlan(p.key)}
+                  disabled={buying !== null}
+                  className={`w-full rounded-xl h-11 text-sm font-semibold ${
+                    p.highlight
+                      ? "gradient-primary text-primary-foreground shadow-primary"
+                      : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                  }`}
+                >
+                  {buying === p.key ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Redirection…</>
+                  ) : (
+                    <>Choisir {p.name}</>
+                  )}
+                </Button>
               </div>
+            ))}
+          </div>
+        </section>
+      </div>
             ))}
           </div>
         </section>
