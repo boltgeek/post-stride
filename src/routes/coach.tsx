@@ -100,6 +100,7 @@ function CoachPage() {
 
   const plans = [
     {
+      key: "starter" as const,
       name: "Starter",
       priceFcfa: 12500,
       desc: "Conseils et idées de posts, réponse sous 24h",
@@ -107,6 +108,7 @@ function CoachPage() {
       highlight: false,
     },
     {
+      key: "essentielle" as const,
       name: "Essentielle",
       priceFcfa: 25000,
       desc: "Starter + audit page Facebook/Instagram + stratégie de conversion",
@@ -114,6 +116,7 @@ function CoachPage() {
       highlight: true,
     },
     {
+      key: "premium" as const,
       name: "Premium",
       priceFcfa: 50000,
       desc: "Essentielle + rédaction de posts à ta place + suivi hebdomadaire",
