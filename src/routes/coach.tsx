@@ -48,10 +48,25 @@ function CoachPage() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [currency, setCurrency] = useState<Currency>({ code: "FCFA", symbol: "", rate: 1, suffix: " FCFA" });
+  const [buying, setBuying] = useState<string | null>(null);
+  const createPurchaseFn = useServerFn(createPurchase);
 
   useEffect(() => {
     if (!authLoading && !user) navigate({ to: "/login" });
   }, [authLoading, user, navigate]);
+
+  const handleBuyPlan = async (plan: "starter" | "essentielle" | "premium") => {
+    if (!user) return;
+    setBuying(plan);
+    try {
+      const res = await createPurchaseFn({ data: { plan } });
+      window.location.href = res.payUrl;
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Impossible d'initier le paiement. Réessaye.");
+      setBuying(null);
+    }
+  };
 
   useEffect(() => {
     // Détection pays via API gratuite
