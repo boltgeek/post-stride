@@ -258,10 +258,6 @@ function CoachPage() {
           </div>
         </section>
       </div>
-            ))}
-          </div>
-        </section>
-      </div>
 
       {/* 6. Bouton WhatsApp fixe */}
       <div className="fixed bottom-20 left-0 right-0 px-4 z-40 pointer-events-none">
