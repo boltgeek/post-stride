@@ -92,13 +92,25 @@ export async function fetchChallenges(): Promise<Challenge[]> {
 }
 
 export async function joinChallenge(challengeId: string) {
-  const userId = (await supabase.auth.getUser()).data.user?.id;
+  const { data: { user } } = await supabase.auth.getUser();
+  const userId = user?.id;
   if (!userId) throw new Error("Non connectée");
+
+  const { data: stats } = await supabase
+    .from("user_stats")
+    .select("display_name")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  const displayName = stats?.display_name || user?.user_metadata?.full_name || user?.user_metadata?.name || null;
+
   const { error } = await supabase.from("challenge_participants").insert({
     challenge_id: challengeId,
     user_id: userId,
     type_compte: "member",
     score: 0,
+    prenom: displayName,
+    email: user?.email ?? null,
   });
   if (error && !error.message.includes("duplicate")) throw error;
 }
