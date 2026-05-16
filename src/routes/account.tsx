@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Lock, Loader2, ArrowLeft, CheckCircle2, LogOut } from "lucide-react";
+import { Lock, Loader2, ArrowLeft, CheckCircle2, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { BottomNav } from "@/components/BottomNav";
 import { useAuth } from "@/lib/auth";
