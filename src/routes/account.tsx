@@ -25,6 +25,9 @@ function AccountPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [saving, setSaving] = useState(false);
+  const [displayName, setDisplayName] = useState("");
+  const [nameSaving, setNameSaving] = useState(false);
+  const [nameSuccess, setNameSuccess] = useState("");
 
   useEffect(() => {
     if (!authLoading && !user) navigate({ to: "/login" });
