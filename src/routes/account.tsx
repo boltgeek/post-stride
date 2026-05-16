@@ -126,6 +126,43 @@ function AccountPage() {
 
         <BadgesSection userId={user.id} />
 
+        <div className="bg-card rounded-2xl p-5 shadow-card border border-border mb-4 animate-slide-up">
+          <h2 className="text-sm font-bold text-foreground mb-1 uppercase tracking-wide">
+            Mon nom
+          </h2>
+          <p className="text-xs text-muted-foreground mb-4">
+            Ce nom apparaîtra dans les challenges et le classement.
+          </p>
+
+          <form onSubmit={handleSaveName} className="space-y-3">
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                type="text"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="Ton prénom ou nom"
+                maxLength={40}
+                className="w-full rounded-xl border border-input bg-background pl-10 pr-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+              />
+            </div>
+
+            {nameSuccess && (
+              <p className="text-xs text-success flex items-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5" /> {nameSuccess}
+              </p>
+            )}
+
+            <Button
+              type="submit"
+              disabled={nameSaving || !displayName.trim()}
+              className="w-full rounded-xl gradient-primary text-primary-foreground shadow-primary h-12 text-base font-semibold"
+            >
+              {nameSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : "Enregistrer mon nom"}
+            </Button>
+          </form>
+        </div>
+
         <div className="bg-card rounded-2xl p-5 shadow-card border border-border animate-slide-up">
           <h2 className="text-sm font-bold text-foreground mb-1 uppercase tracking-wide">
             Changer mon mot de passe
