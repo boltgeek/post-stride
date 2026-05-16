@@ -33,6 +33,35 @@ function AccountPage() {
     if (!authLoading && !user) navigate({ to: "/login" });
   }, [authLoading, user, navigate]);
 
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("user_stats")
+      .select("display_name")
+      .eq("user_id", user.id)
+      .single()
+      .then(({ data }) => {
+        if (data?.display_name) setDisplayName(data.display_name);
+      });
+  }, [user]);
+
+  const handleSaveName = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    setNameSuccess("");
+    setNameSaving(true);
+    const { error } = await supabase
+      .from("user_stats")
+      .update({ display_name: displayName.trim() })
+      .eq("user_id", user.id);
+    setNameSaving(false);
+    if (error) {
+      setError(error.message);
+      return;
+    }
+    setNameSuccess("Nom mis à jour ✨");
+  };
+
   if (authLoading || !user) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
