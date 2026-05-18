@@ -190,6 +190,27 @@ export type Database = {
         }
         Relationships: []
       }
+      missions_catalog: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          text: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          text: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          text?: string
+        }
+        Relationships: []
+      }
       posts: {
         Row: {
           comments: number | null
@@ -310,6 +331,44 @@ export type Database = {
             columns: ["challenge_id"]
             isOneToOne: false
             referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_daily_missions: {
+        Row: {
+          category: string
+          completed_at: string | null
+          created_at: string
+          id: string
+          mission_date: string
+          mission_id: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          mission_date: string
+          mission_id: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          mission_date?: string
+          mission_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_daily_missions_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "missions_catalog"
             referencedColumns: ["id"]
           },
         ]
@@ -436,6 +495,25 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_mission_history_stats: {
+        Args: never
+        Returns: {
+          daily_counts: Json
+          full_days: number
+          total_completed: number
+          week_consistency: number
+        }[]
+      }
+      get_or_create_daily_missions: {
+        Args: never
+        Returns: {
+          category: string
+          completed_at: string
+          id: string
+          mission_id: string
+          text: string
+        }[]
+      }
       increment_copy_count: { Args: never; Returns: undefined }
       register_daily_login: { Args: never; Returns: undefined }
       remove_challenge_participant: {
@@ -443,6 +521,10 @@ export type Database = {
         Returns: undefined
       }
       reset_monthly_challenge_counter: { Args: never; Returns: undefined }
+      toggle_daily_mission: {
+        Args: { _completed: boolean; _id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
