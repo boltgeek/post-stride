@@ -268,3 +268,97 @@ function BadgesSection({ userId }: { userId: string }) {
   );
 }
 
+function MissionsHistorySection() {
+  const [stats, setStats] = useState<{
+    total_completed: number;
+    full_days: number;
+    week_consistency: number;
+    daily_counts: Record<string, number>;
+  } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data, error } = await (supabase as any).rpc("get_mission_history_stats");
+        if (error) throw error;
+        const row = Array.isArray(data) ? data[0] : data;
+        if (row) {
+          setStats({
+            total_completed: row.total_completed ?? 0,
+            full_days: row.full_days ?? 0,
+            week_consistency: row.week_consistency ?? 0,
+            daily_counts: row.daily_counts ?? {},
+          });
+        }
+      } catch (e) {
+        console.error("History stats failed", e);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  // Build last 28 days calendar
+  const days: { date: string; done: number }[] = [];
+  const today = new Date();
+  for (let i = 27; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const iso = d.toISOString().slice(0, 10);
+    days.push({ date: iso, done: stats?.daily_counts?.[iso] ?? 0 });
+  }
+
+  return (
+    <div className="bg-card rounded-2xl p-5 shadow-card border border-border mb-4 animate-slide-up">
+      <h2 className="text-sm font-bold text-foreground mb-1 uppercase tracking-wide">
+        ⚡ Mes missions
+      </h2>
+      <p className="text-xs text-muted-foreground mb-4">
+        Ton historique personnel — visible uniquement par toi.
+      </p>
+
+      {loading ? (
+        <div className="flex justify-center py-4">
+          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+        </div>
+      ) : stats ? (
+        <>
+          <div className="grid grid-cols-3 gap-2 mb-5">
+            <div className="rounded-xl bg-primary/5 border border-primary/20 p-3 text-center">
+              <p className="text-2xl font-extrabold text-foreground">{stats.total_completed}</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide mt-1">Total missions</p>
+            </div>
+            <div className="rounded-xl bg-success/5 border border-success/20 p-3 text-center">
+              <p className="text-2xl font-extrabold text-foreground">{stats.full_days}</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide mt-1">Journées complètes</p>
+            </div>
+            <div className="rounded-xl bg-streak/5 border border-streak/20 p-3 text-center">
+              <p className="text-2xl font-extrabold text-foreground">{stats.week_consistency}%</p>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wide mt-1">Cette semaine</p>
+            </div>
+          </div>
+
+          <p className="text-xs font-semibold text-muted-foreground mb-2">28 derniers jours</p>
+          <div className="grid grid-cols-7 gap-1.5">
+            {days.map((d) => {
+              const intensity =
+                d.done >= 5 ? "bg-success" :
+                d.done >= 3 ? "bg-success/60" :
+                d.done >= 1 ? "bg-success/30" : "bg-muted";
+              return (
+                <div
+                  key={d.date}
+                  title={`${d.date} — ${d.done}/5`}
+                  className={`aspect-square rounded-md ${intensity}`}
+                />
+              );
+            })}
+          </div>
+        </>
+      ) : (
+        <p className="text-xs text-muted-foreground">Pas encore d'historique.</p>
+      )}
+    </div>
+  );
+}
