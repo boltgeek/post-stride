@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Copy, Check, Calendar as CalIcon, Sparkles, ArrowRight, Trophy, Flame, Loader2, Upload } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
+import { DailyMissions } from "@/components/DailyMissions";
 import { useAuth } from "@/lib/auth";
 import { useAppData, useInvalidateAppData } from "@/hooks/use-app-data";
 import { publishPost, type Post } from "@/lib/store";
@@ -176,6 +177,9 @@ function HomePage() {
           </h1>
           <p className="text-sm text-muted-foreground mt-1">{motivation}</p>
         </header>
+
+        {/* Daily personal missions checklist */}
+        <DailyMissions />
 
         {/* SECTION 2 — Hero card */}
         <section className="relative animate-slide-up" style={{ animationDelay: "60ms" }}>
