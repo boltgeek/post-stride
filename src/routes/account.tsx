@@ -126,6 +126,8 @@ function AccountPage() {
 
         <BadgesSection userId={user.id} />
 
+        <MissionsHistorySection />
+
         <div className="bg-card rounded-2xl p-5 shadow-card border border-border mb-4 animate-slide-up">
           <h2 className="text-sm font-bold text-foreground mb-1 uppercase tracking-wide">
             Mon nom
