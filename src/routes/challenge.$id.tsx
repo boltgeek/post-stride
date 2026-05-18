@@ -43,16 +43,18 @@ function ChallengePage() {
 
       const userIds = (parts || []).map((p: any) => p.user_id).filter(Boolean);
       const { data: stats } = userIds.length
-        ? await supabase.from("user_stats").select("user_id, display_name").in("user_id", userIds)
+        ? await (supabase as any).rpc("get_display_names", { _user_ids: userIds })
         : { data: [] as any[] };
       const nameMap: Record<string, string> = {};
-      (stats || []).forEach((s: any) => (nameMap[s.user_id] = s.display_name));
+      (stats || []).forEach((s: any) => {
+        if (s.display_name) nameMap[s.user_id] = s.display_name;
+      });
 
       return {
         challenge: ch as Challenge,
         participants: (parts || []).map((p: any, idx: number) => ({
           ...p,
-          display_name: p.prenom || nameMap[p.user_id] || "Vendeuse",
+          display_name: nameMap[p.user_id] || p.prenom || (p.email ? p.email.split("@")[0] : "Vendeuse"),
           rank: idx + 1,
         })),
       };
