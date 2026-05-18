@@ -405,6 +405,13 @@ export type Database = {
         Args: { _challenge_id: string }
         Returns: undefined
       }
+      get_display_names: {
+        Args: { _user_ids: string[] }
+        Returns: {
+          display_name: string
+          user_id: string
+        }[]
+      }
       get_leaderboard: {
         Args: never
         Returns: {
