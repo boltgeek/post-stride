@@ -178,6 +178,9 @@ function HomePage() {
           <p className="text-sm text-muted-foreground mt-1">{motivation}</p>
         </header>
 
+        {/* Daily personal missions checklist */}
+        <DailyMissions />
+
         {/* SECTION 2 — Hero card */}
         <section className="relative animate-slide-up" style={{ animationDelay: "60ms" }}>
           {confetti && (
