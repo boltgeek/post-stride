@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import { Check, Loader2 } from "lucide-react";
 
 type Mission = {
@@ -18,26 +19,123 @@ const CATEGORY_META: Record<string, { emoji: string; label: string }> = {
   contenu: { emoji: "📢", label: "Contenu" },
 };
 
+const CATEGORIES = Object.keys(CATEGORY_META);
+
+type CatalogMission = {
+  id: string;
+  category: string;
+  text: string;
+};
+
+type DailyMissionRow = {
+  id: string;
+  mission_id: string;
+  category: string;
+  completed_at: string | null;
+};
+
+type DailyMissionInsert = Database["public"]["Tables"]["user_daily_missions"]["Insert"];
+type MissionText = Pick<CatalogMission, "id" | "text">;
+
+const todayISO = () => new Date().toISOString().slice(0, 10);
+
 export function DailyMissions() {
   const [missions, setMissions] = useState<Mission[]>([]);
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState<string | null>(null);
 
-  const load = async () => {
-    try {
-      const { data, error } = await (supabase as any).rpc("get_or_create_daily_missions");
+  const loadFallback = useCallback(async () => {
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    if (authError) throw authError;
+    const userId = authData.user?.id;
+    if (!userId) throw new Error("Not authenticated");
+
+    const missionDate = todayISO();
+    const fetchDailyRows = async () => {
+      const { data, error } = await supabase
+        .from("user_daily_missions")
+        .select("id, mission_id, category, completed_at")
+        .eq("user_id", userId)
+        .eq("mission_date", missionDate);
       if (error) throw error;
-      setMissions((data || []) as Mission[]);
+      return (data || []) as DailyMissionRow[];
+    };
+
+    let rows = await fetchDailyRows();
+    const existingCategories = new Set(rows.map((m) => m.category));
+    const missingCategories = CATEGORIES.filter((category) => !existingCategories.has(category));
+
+    if (missingCategories.length > 0) {
+      const { data: catalog, error: catalogError } = await supabase
+        .from("missions_catalog")
+        .select("id, category, text")
+        .in("category", missingCategories);
+      if (catalogError) throw catalogError;
+
+      const rowsToCreate = missingCategories
+        .map((category) => {
+          const options = ((catalog || []) as CatalogMission[]).filter((m) => m.category === category);
+          const picked = options[Math.floor(Math.random() * options.length)];
+          return picked
+            ? { user_id: userId, mission_date: missionDate, mission_id: picked.id, category }
+            : null;
+        })
+        .filter(Boolean);
+
+      if (rowsToCreate.length > 0) {
+        const { error: insertError } = await supabase
+          .from("user_daily_missions")
+          .upsert(rowsToCreate as DailyMissionInsert[], {
+            onConflict: "user_id,mission_date,category",
+            ignoreDuplicates: true,
+          });
+        if (insertError) throw insertError;
+        rows = await fetchDailyRows();
+      }
+    }
+
+    const missionIds = [...new Set(rows.map((row) => row.mission_id))];
+    const { data: texts, error: textsError } = await supabase
+      .from("missions_catalog")
+      .select("id, text")
+      .in("id", missionIds);
+    if (textsError) throw textsError;
+
+    const textById = new Map(((texts || []) as MissionText[]).map((m) => [m.id, m.text]));
+
+    return rows
+      .map((row) => ({
+        id: row.id,
+        mission_id: row.mission_id,
+        category: row.category,
+        text: textById.get(row.mission_id) || "",
+        completed_at: row.completed_at,
+      }))
+      .filter((mission) => mission.text)
+      .sort((a, b) => CATEGORIES.indexOf(a.category) - CATEGORIES.indexOf(b.category));
+  }, []);
+
+  const load = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.rpc("get_or_create_daily_missions");
+      if (error) {
+        console.warn("Daily missions RPC failed, using client fallback", error);
+        setMissions(await loadFallback());
+        return;
+      }
+
+      const loadedMissions = (data || []) as Mission[];
+      setMissions(loadedMissions.length > 0 ? loadedMissions : await loadFallback());
     } catch (e) {
       console.error("Load missions failed", e);
     } finally {
       setLoading(false);
     }
-  };
+  }, [loadFallback]);
 
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
 
   const toggle = async (m: Mission) => {
     const newState = !m.completed_at;
@@ -49,7 +147,7 @@ export function DailyMissions() {
       )
     );
     try {
-      const { error } = await (supabase as any).rpc("toggle_daily_mission", {
+      const { error } = await supabase.rpc("toggle_daily_mission", {
         _id: m.id,
         _completed: newState,
       });
