@@ -31,16 +31,9 @@ type DailyMissionRow = {
   mission_id: string;
   category: string;
   completed_at: string | null;
-  missions_catalog?: { text: string } | { text: string }[] | null;
 };
 
 const todayISO = () => new Date().toISOString().slice(0, 10);
-
-function catalogText(row: DailyMissionRow) {
-  const linked = row.missions_catalog;
-  if (Array.isArray(linked)) return linked[0]?.text || "";
-  return linked?.text || "";
-}
 
 export function DailyMissions() {
   const [missions, setMissions] = useState<Mission[]>([]);
@@ -57,7 +50,7 @@ export function DailyMissions() {
     const fetchDailyRows = async () => {
       const { data, error } = await (supabase as any)
         .from("user_daily_missions")
-        .select("id, mission_id, category, completed_at, missions_catalog(text)")
+        .select("id, mission_id, category, completed_at")
         .eq("user_id", userId)
         .eq("mission_date", missionDate);
       if (error) throw error;
@@ -97,12 +90,21 @@ export function DailyMissions() {
       }
     }
 
+    const missionIds = [...new Set(rows.map((row) => row.mission_id))];
+    const { data: texts, error: textsError } = await (supabase as any)
+      .from("missions_catalog")
+      .select("id, text")
+      .in("id", missionIds);
+    if (textsError) throw textsError;
+
+    const textById = new Map(((texts || []) as Pick<CatalogMission, "id" | "text">[]).map((m) => [m.id, m.text]));
+
     return rows
       .map((row) => ({
         id: row.id,
         mission_id: row.mission_id,
         category: row.category,
-        text: catalogText(row),
+        text: textById.get(row.mission_id) || "",
         completed_at: row.completed_at,
       }))
       .filter((mission) => mission.text)
