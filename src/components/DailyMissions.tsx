@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import { Check, Loader2 } from "lucide-react";
 
 type Mission = {
@@ -33,6 +34,9 @@ type DailyMissionRow = {
   completed_at: string | null;
 };
 
+type DailyMissionInsert = Database["public"]["Tables"]["user_daily_missions"]["Insert"];
+type MissionText = Pick<CatalogMission, "id" | "text">;
+
 const todayISO = () => new Date().toISOString().slice(0, 10);
 
 export function DailyMissions() {
@@ -40,7 +44,7 @@ export function DailyMissions() {
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState<string | null>(null);
 
-  const loadFallback = async () => {
+  const loadFallback = useCallback(async () => {
     const { data: authData, error: authError } = await supabase.auth.getUser();
     if (authError) throw authError;
     const userId = authData.user?.id;
@@ -48,7 +52,7 @@ export function DailyMissions() {
 
     const missionDate = todayISO();
     const fetchDailyRows = async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("user_daily_missions")
         .select("id, mission_id, category, completed_at")
         .eq("user_id", userId)
@@ -62,7 +66,7 @@ export function DailyMissions() {
     const missingCategories = CATEGORIES.filter((category) => !existingCategories.has(category));
 
     if (missingCategories.length > 0) {
-      const { data: catalog, error: catalogError } = await (supabase as any)
+      const { data: catalog, error: catalogError } = await supabase
         .from("missions_catalog")
         .select("id, category, text")
         .in("category", missingCategories);
@@ -79,9 +83,9 @@ export function DailyMissions() {
         .filter(Boolean);
 
       if (rowsToCreate.length > 0) {
-        const { error: insertError } = await (supabase as any)
+        const { error: insertError } = await supabase
           .from("user_daily_missions")
-          .upsert(rowsToCreate, {
+          .upsert(rowsToCreate as DailyMissionInsert[], {
             onConflict: "user_id,mission_date,category",
             ignoreDuplicates: true,
           });
@@ -91,13 +95,13 @@ export function DailyMissions() {
     }
 
     const missionIds = [...new Set(rows.map((row) => row.mission_id))];
-    const { data: texts, error: textsError } = await (supabase as any)
+    const { data: texts, error: textsError } = await supabase
       .from("missions_catalog")
       .select("id, text")
       .in("id", missionIds);
     if (textsError) throw textsError;
 
-    const textById = new Map(((texts || []) as Pick<CatalogMission, "id" | "text">[]).map((m) => [m.id, m.text]));
+    const textById = new Map(((texts || []) as MissionText[]).map((m) => [m.id, m.text]));
 
     return rows
       .map((row) => ({
@@ -109,11 +113,11 @@ export function DailyMissions() {
       }))
       .filter((mission) => mission.text)
       .sort((a, b) => CATEGORIES.indexOf(a.category) - CATEGORIES.indexOf(b.category));
-  };
+  }, []);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
-      const { data, error } = await (supabase as any).rpc("get_or_create_daily_missions");
+      const { data, error } = await supabase.rpc("get_or_create_daily_missions");
       if (error) {
         console.warn("Daily missions RPC failed, using client fallback", error);
         setMissions(await loadFallback());
@@ -127,11 +131,11 @@ export function DailyMissions() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [loadFallback]);
 
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
 
   const toggle = async (m: Mission) => {
     const newState = !m.completed_at;
@@ -143,7 +147,7 @@ export function DailyMissions() {
       )
     );
     try {
-      const { error } = await (supabase as any).rpc("toggle_daily_mission", {
+      const { error } = await supabase.rpc("toggle_daily_mission", {
         _id: m.id,
         _completed: newState,
       });
