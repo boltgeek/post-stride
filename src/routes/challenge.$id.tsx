@@ -247,6 +247,10 @@ function ChallengePage() {
           </div>
         )}
 
+        {isJoined && !isClosed && challenge.type === "communautaire" && (
+          <CommunitySupportBlock challengeId={challenge.id} />
+        )}
+
         {top3.length > 0 && (
           <div className="bg-card rounded-2xl p-4 shadow-card border border-border mb-5">
             <p className="text-sm font-semibold text-foreground mb-4 text-center">
