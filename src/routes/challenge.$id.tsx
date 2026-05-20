@@ -51,7 +51,7 @@ function ChallengePage() {
       });
 
       return {
-        challenge: ch as Challenge,
+        challenge: ch as unknown as Challenge,
         participants: (parts || []).map((p: any, idx: number) => ({
           ...p,
           display_name: nameMap[p.user_id] || p.prenom || (p.email ? p.email.split("@")[0] : "Vendeuse"),
