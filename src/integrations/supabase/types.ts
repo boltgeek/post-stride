@@ -115,6 +115,74 @@ export type Database = {
         }
         Relationships: []
       }
+      challenge_pod_members: {
+        Row: {
+          challenge_id: string
+          id: string
+          joined_at: string
+          pod_id: string
+          user_id: string
+        }
+        Insert: {
+          challenge_id: string
+          id?: string
+          joined_at?: string
+          pod_id: string
+          user_id: string
+        }
+        Update: {
+          challenge_id?: string
+          id?: string
+          joined_at?: string
+          pod_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_pod_members_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenge_pod_members_pod_id_fkey"
+            columns: ["pod_id"]
+            isOneToOne: false
+            referencedRelation: "challenge_pods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      challenge_pods: {
+        Row: {
+          challenge_id: string
+          created_at: string
+          id: string
+          pod_number: number
+        }
+        Insert: {
+          challenge_id: string
+          created_at?: string
+          id?: string
+          pod_number: number
+        }
+        Update: {
+          challenge_id?: string
+          created_at?: string
+          id?: string
+          pod_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_pods_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       challenges: {
         Row: {
           actif: boolean
@@ -124,6 +192,7 @@ export type Database = {
           date_fin: string
           description: string | null
           id: string
+          interactions_per_post: number
           message_bienvenue: string | null
           prive: boolean
           scoring_rules: Json
@@ -139,6 +208,7 @@ export type Database = {
           date_fin: string
           description?: string | null
           id?: string
+          interactions_per_post?: number
           message_bienvenue?: string | null
           prive?: boolean
           scoring_rules?: Json
@@ -154,6 +224,7 @@ export type Database = {
           date_fin?: string
           description?: string | null
           id?: string
+          interactions_per_post?: number
           message_bienvenue?: string | null
           prive?: boolean
           scoring_rules?: Json
@@ -162,6 +233,98 @@ export type Database = {
           type?: string
         }
         Relationships: []
+      }
+      community_assignments: {
+        Row: {
+          assignee_user_id: string
+          assignment_date: string
+          challenge_id: string
+          community_post_id: string
+          completed_at: string | null
+          created_at: string
+          id: string
+          owner_user_id: string
+          penalty_applied: boolean
+          slot_time: string
+        }
+        Insert: {
+          assignee_user_id: string
+          assignment_date?: string
+          challenge_id: string
+          community_post_id: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          owner_user_id: string
+          penalty_applied?: boolean
+          slot_time: string
+        }
+        Update: {
+          assignee_user_id?: string
+          assignment_date?: string
+          challenge_id?: string
+          community_post_id?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          owner_user_id?: string
+          penalty_applied?: boolean
+          slot_time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_assignments_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "community_assignments_community_post_id_fkey"
+            columns: ["community_post_id"]
+            isOneToOne: false
+            referencedRelation: "community_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      community_posts: {
+        Row: {
+          challenge_id: string
+          confirmed_at: string | null
+          created_at: string
+          facebook_url: string
+          id: string
+          post_date: string
+          user_id: string
+        }
+        Insert: {
+          challenge_id: string
+          confirmed_at?: string | null
+          created_at?: string
+          facebook_url: string
+          id?: string
+          post_date?: string
+          user_id: string
+        }
+        Update: {
+          challenge_id?: string
+          confirmed_at?: string | null
+          created_at?: string
+          facebook_url?: string
+          id?: string
+          post_date?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_posts_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       imported_documents: {
         Row: {
@@ -455,11 +618,17 @@ export type Database = {
         }
         Returns: undefined
       }
+      apply_community_penalties: { Args: never; Returns: number }
+      assign_user_to_pod: {
+        Args: { _challenge_id: string; _user_id: string }
+        Returns: string
+      }
       close_challenge_now: {
         Args: { _challenge_id: string }
         Returns: undefined
       }
       close_expired_challenges: { Args: never; Returns: number }
+      confirm_community_post: { Args: { _post_id: string }; Returns: undefined }
       delete_challenge_cascade: {
         Args: { _challenge_id: string }
         Returns: undefined
@@ -504,6 +673,28 @@ export type Database = {
           week_consistency: number
         }[]
       }
+      get_my_community_assignments_today: {
+        Args: { _challenge_id: string }
+        Returns: {
+          completed_at: string
+          facebook_url: string
+          id: string
+          owner_name: string
+          owner_user_id: string
+          slot_time: string
+        }[]
+      }
+      get_my_community_post_today: {
+        Args: { _challenge_id: string }
+        Returns: {
+          assignments: Json
+          confirmed_at: string
+          done: number
+          facebook_url: string
+          post_id: string
+          total: number
+        }[]
+      }
       get_or_create_daily_missions: {
         Args: never
         Returns: {
@@ -515,12 +706,20 @@ export type Database = {
         }[]
       }
       increment_copy_count: { Args: never; Returns: undefined }
+      mark_assignment_done: {
+        Args: { _assignment_id: string }
+        Returns: undefined
+      }
       register_daily_login: { Args: never; Returns: undefined }
       remove_challenge_participant: {
         Args: { _challenge_id: string; _user_id: string }
         Returns: undefined
       }
       reset_monthly_challenge_counter: { Args: never; Returns: undefined }
+      submit_community_post: {
+        Args: { _challenge_id: string; _url: string }
+        Returns: string
+      }
       toggle_daily_mission: {
         Args: { _completed: boolean; _id: string }
         Returns: undefined

@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { joinChallenge, daysRemaining, type Challenge } from "@/lib/challenges";
 import { BottomNav } from "@/components/BottomNav";
 import { ChallengeAdminPanel } from "@/components/ChallengeAdminPanel";
+import { CommunitySupportBlock } from "@/components/CommunitySupportBlock";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/challenge/$id")({
@@ -51,7 +52,7 @@ function ChallengePage() {
       });
 
       return {
-        challenge: ch as Challenge,
+        challenge: ch as unknown as Challenge,
         participants: (parts || []).map((p: any, idx: number) => ({
           ...p,
           display_name: nameMap[p.user_id] || p.prenom || (p.email ? p.email.split("@")[0] : "Vendeuse"),
@@ -244,6 +245,10 @@ function ChallengePage() {
               Publier maintenant
             </Link>
           </div>
+        )}
+
+        {isJoined && !isClosed && challenge.type === "communautaire" && (
+          <CommunitySupportBlock challengeId={challenge.id} />
         )}
 
         {top3.length > 0 && (
