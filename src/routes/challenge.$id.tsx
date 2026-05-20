@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { joinChallenge, daysRemaining, type Challenge } from "@/lib/challenges";
 import { BottomNav } from "@/components/BottomNav";
 import { ChallengeAdminPanel } from "@/components/ChallengeAdminPanel";
+import { CommunitySupportBlock } from "@/components/CommunitySupportBlock";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/challenge/$id")({
