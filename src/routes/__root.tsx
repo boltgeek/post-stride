@@ -128,6 +128,7 @@ function RootComponent() {
       <AuthProvider>
         <Outlet />
         <InstallPrompt />
+        <PaymentSyncWatcher />
         <Toaster />
       </AuthProvider>
     </QueryClientProvider>
