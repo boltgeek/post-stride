@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { createPurchase } from "@/lib/payments.functions";
+import { setPendingPurchaseRef } from "@/components/PaymentSyncWatcher";
 
 export const Route = createFileRoute("/upload")({
   component: UploadPage,
@@ -82,6 +83,7 @@ function UploadPage() {
     setUnlockingAi(true);
     try {
       const res = await createPurchaseFn({ data: { plan: "ai_full" } });
+      setPendingPurchaseRef(res.reference);
       window.location.href = res.payUrl;
     } catch (err: any) {
       console.error(err);

@@ -6,6 +6,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { useAuth } from "@/lib/auth";
 import { useServerFn } from "@tanstack/react-start";
 import { createPurchase } from "@/lib/payments.functions";
+import { setPendingPurchaseRef } from "@/components/PaymentSyncWatcher";
 import { toast } from "sonner";
 import julienPhoto from "@/assets/julien-biloa.png";
 
@@ -60,6 +61,7 @@ function CoachPage() {
     setBuying(plan);
     try {
       const res = await createPurchaseFn({ data: { plan } });
+      setPendingPurchaseRef(res.reference);
       window.location.href = res.payUrl;
     } catch (err: any) {
       console.error(err);

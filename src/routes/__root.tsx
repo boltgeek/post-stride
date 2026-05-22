@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "@/lib/auth";
 import { Toaster } from "@/components/ui/sonner";
 import { InstallPrompt } from "@/components/InstallPrompt";
+import { PaymentSyncWatcher } from "@/components/PaymentSyncWatcher";
 
 import appCss from "../styles.css?url";
 
@@ -127,6 +128,7 @@ function RootComponent() {
       <AuthProvider>
         <Outlet />
         <InstallPrompt />
+        <PaymentSyncWatcher />
         <Toaster />
       </AuthProvider>
     </QueryClientProvider>

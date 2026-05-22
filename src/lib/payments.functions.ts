@@ -76,3 +76,73 @@ export const getLatestPurchaseStatus = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     return row ?? null;
   });
+
+/**
+ * Force / manual unlock. If the matching purchase is in 'success' status,
+ * (re)applies its benefits to user_stats idempotently. Use this when the
+ * webhook fired but the UI never picked it up, or after the user clicks
+ * the "Mon accès n'est pas débloqué" button.
+ */
+export const forceApplyPurchase = createServerFn({ method: "POST" })
+  .middleware([attachSupabaseAuth, requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({ reference: z.string().min(1) }).parse(input)
+  )
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+
+    const { data: purchase, error: pErr } = await supabaseAdmin
+      .from("purchases")
+      .select("id, user_id, plan, status")
+      .eq("reference", data.reference)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (pErr) throw new Error(pErr.message);
+    if (!purchase) return { applied: false, status: "not_found" as const };
+    if (purchase.status !== "success") {
+      return { applied: false, status: purchase.status };
+    }
+
+    if (purchase.plan === "ai_full") {
+      const { data: stats } = await supabaseAdmin
+        .from("user_stats")
+        .select("ai_full_unlocked_at")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (!stats?.ai_full_unlocked_at) {
+        await supabaseAdmin
+          .from("user_stats")
+          .update({ ai_full_unlocked_at: new Date().toISOString() })
+          .eq("user_id", userId);
+      }
+    } else {
+      const { data: stats } = await supabaseAdmin
+        .from("user_stats")
+        .select("subscription_plan, subscription_until")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      const alreadyActive =
+        stats?.subscription_plan === purchase.plan &&
+        stats?.subscription_until &&
+        new Date(stats.subscription_until) > new Date();
+
+      if (!alreadyActive) {
+        const baseDate =
+          stats?.subscription_until && new Date(stats.subscription_until) > new Date()
+            ? new Date(stats.subscription_until)
+            : new Date();
+        const until = new Date(baseDate);
+        until.setDate(until.getDate() + 30);
+        await supabaseAdmin
+          .from("user_stats")
+          .update({
+            subscription_plan: purchase.plan,
+            subscription_until: until.toISOString(),
+          })
+          .eq("user_id", userId);
+      }
+    }
+
+    return { applied: true, status: "success" as const };
+  });
