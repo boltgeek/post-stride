@@ -61,6 +61,7 @@ function CoachPage() {
     setBuying(plan);
     try {
       const res = await createPurchaseFn({ data: { plan } });
+      setPendingPurchaseRef(res.reference);
       window.location.href = res.payUrl;
     } catch (err: any) {
       console.error(err);
