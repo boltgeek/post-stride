@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { createPurchase } from "@/lib/payments.functions";
+import { setPendingPurchaseRef } from "@/components/PaymentSyncWatcher";
 
 export const Route = createFileRoute("/upload")({
   component: UploadPage,
