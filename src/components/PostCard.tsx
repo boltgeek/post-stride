@@ -203,26 +203,41 @@ export function PostCard({ post, isNext }: PostCardProps) {
     );
   }
 
-  // Editing mode
+  // Full-screen editing mode
   if (editing) {
     return (
-      <div className={`bg-card rounded-2xl p-5 shadow-card border-2 border-primary animate-slide-up`}>
-        <textarea
-          value={editText}
-          onChange={(e) => setEditText(e.target.value)}
-          className="w-full rounded-xl border border-input bg-background p-3 text-sm text-foreground resize-none min-h-[120px] focus:ring-2 focus:ring-primary outline-none"
-        />
-        <div className="flex gap-2 mt-3">
-          <Button onClick={handleSaveEdit} disabled={acting} className="flex-1 rounded-xl gradient-primary text-primary-foreground h-10 text-sm font-semibold">
-            {acting ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Check className="w-4 h-4 mr-1" /> Sauver</>}
-          </Button>
-          <Button variant="ghost" onClick={() => { setEditing(false); setEditText(post.content); }} className="rounded-xl h-10">
-            Annuler
-          </Button>
-        </div>
-      </div>
+      <PostEditor
+        initialContent={post.content}
+        onCancel={() => setEditing(false)}
+        onSave={handleSaveEdit}
+      />
     );
   }
+
+  const PublishDialog = (
+    <AlertDialog open={confirmPublish} onOpenChange={setConfirmPublish}>
+      <AlertDialogContent className="rounded-2xl">
+        <AlertDialogHeader>
+          <AlertDialogTitle>As-tu bien publié ce post sur Facebook ?</AlertDialogTitle>
+          <AlertDialogDescription>
+            On marque ce post comme publié dans ton calendrier uniquement si tu l'as déjà mis en ligne.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel className="rounded-xl">Annuler</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={async () => {
+              setConfirmPublish(false);
+              await handlePublish();
+            }}
+            className="rounded-xl bg-success text-success-foreground hover:bg-success/90"
+          >
+            Oui, confirmer
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
 
   return (
     <>
@@ -230,33 +245,53 @@ export function PostCard({ post, isNext }: PostCardProps) {
         <div className="flex items-center justify-between mb-3">
           <span className="text-xs font-medium text-muted-foreground flex items-center gap-1">
             <Clock className="w-3.5 h-3.5" /> {post.scheduledTime}
-          </span>
-          <div className="flex items-center gap-1">
             {isNext && (
-              <span className="text-[10px] font-bold text-primary-foreground bg-primary px-2 py-0.5 rounded-full animate-pulse-glow">MAINTENANT</span>
+              <span className="ml-2 text-[10px] font-bold text-primary-foreground bg-primary px-2 py-0.5 rounded-full animate-pulse-glow">MAINTENANT</span>
             )}
-            <button onClick={() => setEditing(true)} className="p-1.5 rounded-lg hover:bg-accent transition-colors">
-              <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
-            </button>
-            <button onClick={() => setConfirmDelete(true)} disabled={acting} className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors">
-              <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
-            </button>
-          </div>
+          </span>
+          <button onClick={() => setConfirmDelete(true)} disabled={acting} className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors" aria-label="Supprimer">
+            <Trash2 className="w-3.5 h-3.5 text-muted-foreground" />
+          </button>
         </div>
-        <p className="text-sm text-foreground leading-relaxed mb-4 whitespace-pre-wrap">{post.content}</p>
+
+        <p className="text-sm text-foreground leading-relaxed mb-3 whitespace-pre-wrap">{post.content}</p>
+
+        <button
+          onClick={() => setEditing(true)}
+          className="w-full mb-3 flex items-center justify-center gap-2 rounded-xl border border-dashed border-primary/50 text-primary text-sm font-semibold py-2.5 hover:bg-primary/5 transition-colors"
+        >
+          <Pencil className="w-4 h-4" /> Personnaliser ✏️
+        </button>
+
         <div className="flex gap-2">
-          <Button onClick={handlePublish} disabled={acting} className="flex-1 rounded-xl gradient-primary text-primary-foreground shadow-primary h-12 text-base font-semibold">
-            <Check className="w-5 h-5 mr-1" /> Publié ✓
+          <Button
+            variant="outline"
+            onClick={handleCopy}
+            className="flex-1 rounded-xl h-12 text-sm font-semibold border-primary text-primary hover:bg-primary/5 hover:text-primary"
+          >
+            {copied ? <Check className="w-4 h-4 mr-1 text-success" /> : <Copy className="w-4 h-4 mr-1" />}
+            Copier
           </Button>
-          <Button variant="outline" onClick={handleCopy} className="rounded-xl h-12 px-4">
-            {copied ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
-          </Button>
-          <Button variant="ghost" onClick={handleSkip} disabled={acting} className="rounded-xl h-12 px-4 text-muted-foreground">
-            <X className="w-4 h-4" />
+          <Button
+            onClick={() => setConfirmPublish(true)}
+            disabled={acting}
+            className="flex-1 rounded-xl h-12 text-sm font-semibold bg-success text-success-foreground hover:bg-success/90"
+          >
+            <Check className="w-4 h-4 mr-1" /> Marquer comme publié
           </Button>
         </div>
+
+        <button
+          onClick={handleSkip}
+          disabled={acting}
+          className="w-full mt-2 text-[11px] text-muted-foreground hover:text-foreground transition-colors py-1"
+        >
+          Ignorer ce post
+        </button>
       </div>
       {DeleteDialog}
+      {PublishDialog}
     </>
   );
 }
+
