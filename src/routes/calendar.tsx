@@ -118,7 +118,7 @@ function CalendarPage() {
       <div className="max-w-lg mx-auto px-4 pt-6">
         <header className="mb-6">
           <h1 className="text-xl font-bold text-foreground">Calendrier</h1>
-          <p className="text-xs text-muted-foreground">Ton espace pour publier chaque jour</p>
+          <p className="text-xs text-muted-foreground">Copie le texte et publie-le toi-même sur Facebook</p>
         </header>
 
         {!hasPosts ? (
