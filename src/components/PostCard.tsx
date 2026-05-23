@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Check, X, Copy, Clock, MessageCircle, Heart, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Check, X, Copy, Clock, MessageCircle, Heart, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Post } from "@/lib/store";
 import { publishPost, skipPost, updatePostStats, updatePostContent, deletePost } from "@/lib/store";
 import { useInvalidateAppData } from "@/hooks/use-app-data";
 import { supabase } from "@/integrations/supabase/client";
+import { PostEditor } from "@/components/PostEditor";
 import {
   AlertDialog,
   AlertDialogAction,
