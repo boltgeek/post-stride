@@ -118,7 +118,7 @@ function CalendarPage() {
       <div className="max-w-lg mx-auto px-4 pt-6">
         <header className="mb-6">
           <h1 className="text-xl font-bold text-foreground">Calendrier</h1>
-          <p className="text-xs text-muted-foreground">Ton espace pour publier chaque jour</p>
+          <p className="text-xs text-muted-foreground">Copie le texte et publie-le toi-même sur Facebook</p>
         </header>
 
         {!hasPosts ? (
@@ -163,20 +163,20 @@ function CalendarPage() {
 
             {/* Reschedule banner */}
             {latePosts.length > 0 ? (
-              <div className="bg-accent border-2 border-primary rounded-2xl p-4 mb-4 animate-slide-up">
-                <p className="text-sm font-semibold text-foreground mb-1">
-                  ⚠️ {latePosts.length} post{latePosts.length > 1 ? "s" : ""} en retard
+              <div className="bg-success/10 border-2 border-success rounded-2xl p-4 mb-4 animate-slide-up">
+                <p className="text-sm font-semibold text-success mb-1">
+                  {latePosts.length} post{latePosts.length > 1 ? "s sont prêts" : " est prêt"} pour toi 💪
                 </p>
                 <p className="text-xs text-muted-foreground mb-3">
-                  Repars de zéro : on replanifie tout à partir d'aujourd'hui.
+                  On replanifie tout à partir d'aujourd'hui pour que tu puisses repartir.
                 </p>
                 <Button
                   onClick={handleReschedule}
                   disabled={rescheduling}
-                  className="w-full rounded-xl gradient-primary text-primary-foreground shadow-primary h-11 text-sm font-semibold"
+                  className="w-full rounded-xl bg-success text-success-foreground hover:bg-success/90 h-11 text-sm font-semibold"
                 >
                   <RefreshCw className={`w-4 h-4 mr-2 ${rescheduling ? "animate-spin" : ""}`} />
-                  Mettre à jour mon calendrier
+                  Mettre à jour mon planning
                 </Button>
               </div>
             ) : (
@@ -186,24 +186,33 @@ function CalendarPage() {
                 className="w-full bg-card rounded-2xl p-3 mb-4 shadow-card border border-border flex items-center justify-center gap-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${rescheduling ? "animate-spin" : ""}`} />
-                Mettre à jour mon calendrier
+                Mettre à jour mon planning
               </button>
             )}
 
-            {/* Week stats */}
-            <div className="grid grid-cols-3 gap-2 mb-5">
-              {[
-                { label: "Publiés", value: weekStats.published, icon: "✅" },
-                { label: "Réactions", value: weekStats.totalReactions, icon: "❤️" },
-                { label: "Jours actifs", value: `${weekStats.activeDays}/7`, icon: "📅" },
-              ].map((s) => (
-                <div key={s.label} className="bg-card rounded-xl p-3 shadow-card border border-border text-center">
-                  <p className="text-lg">{s.icon}</p>
-                  <p className="text-base font-bold text-foreground">{s.value}</p>
-                  <p className="text-[10px] text-muted-foreground">{s.label}</p>
-                </div>
-              ))}
-            </div>
+            {/* Week stats — hidden when everything is zero */}
+            {(weekStats.published > 0 || weekStats.totalReactions > 0 || weekStats.activeDays > 0) ? (
+              <div className="grid grid-cols-3 gap-2 mb-5">
+                {[
+                  { label: "Publiés", value: weekStats.published, icon: "✅" },
+                  { label: "Réactions", value: weekStats.totalReactions, icon: "❤️" },
+                  { label: "Jours actifs", value: `${weekStats.activeDays}/7`, icon: "📅" },
+                ].map((s) => (
+                  <div key={s.label} className="bg-card rounded-xl p-3 shadow-card border border-border text-center">
+                    <p className="text-lg">{s.icon}</p>
+                    <p className="text-base font-bold text-foreground">{s.value}</p>
+                    <p className="text-[10px] text-muted-foreground">{s.label}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-card rounded-2xl p-4 mb-5 shadow-card border border-border text-center">
+                <p className="text-sm text-muted-foreground">
+                  Publie ton premier post pour voir tes stats apparaître ici ✨
+                </p>
+              </div>
+            )}
+
 
             {/* Date selector */}
             <div className="flex items-center justify-between bg-card rounded-2xl p-3 shadow-card border border-border mb-4">
