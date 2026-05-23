@@ -83,10 +83,10 @@ export function PostCard({ post, isNext }: PostCardProps) {
     }
   };
 
-  const handleSaveEdit = async () => {
+  const handleSaveEdit = async (newText: string) => {
     setActing(true);
     try {
-      await updatePostContent(post.id, editText);
+      await updatePostContent(post.id, newText);
       invalidate();
       setEditing(false);
     } catch (err) {
