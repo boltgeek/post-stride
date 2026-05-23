@@ -213,20 +213,6 @@ function CalendarPage() {
               </div>
             )}
 
-            {/* Week stats */}
-            <div className="grid grid-cols-3 gap-2 mb-5">
-              {[
-                { label: "Publiés", value: weekStats.published, icon: "✅" },
-                { label: "Réactions", value: weekStats.totalReactions, icon: "❤️" },
-                { label: "Jours actifs", value: `${weekStats.activeDays}/7`, icon: "📅" },
-              ].map((s) => (
-                <div key={s.label} className="bg-card rounded-xl p-3 shadow-card border border-border text-center">
-                  <p className="text-lg">{s.icon}</p>
-                  <p className="text-base font-bold text-foreground">{s.value}</p>
-                  <p className="text-[10px] text-muted-foreground">{s.label}</p>
-                </div>
-              ))}
-            </div>
 
             {/* Date selector */}
             <div className="flex items-center justify-between bg-card rounded-2xl p-3 shadow-card border border-border mb-4">
