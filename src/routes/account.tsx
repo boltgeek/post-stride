@@ -5,6 +5,17 @@ import { Button } from "@/components/ui/button";
 import { BottomNav } from "@/components/BottomNav";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 
 export const Route = createFileRoute("/account")({
   component: AccountPage,
@@ -19,6 +30,9 @@ export const Route = createFileRoute("/account")({
 function AccountPage() {
   const { user, loading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
+  const [confirmLogout, setConfirmLogout] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+
 
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -215,7 +229,47 @@ function AccountPage() {
             </Button>
           </form>
         </div>
+
+        <button
+          onClick={() => setConfirmLogout(true)}
+          disabled={loggingOut}
+          style={{ height: 48, borderRadius: 12 }}
+          className="w-full mt-6 flex items-center justify-center gap-2 bg-white border-2 border-destructive text-destructive font-semibold text-sm hover:bg-destructive/5 transition-colors disabled:opacity-60"
+        >
+          {loggingOut ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
+          Se déconnecter
+        </button>
       </div>
+
+      <AlertDialog open={confirmLogout} onOpenChange={setConfirmLogout}>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Voulez-vous vraiment vous déconnecter ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tu pourras te reconnecter à tout moment avec ton email.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-xl">Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                setLoggingOut(true);
+                try {
+                  await signOut();
+                  setConfirmLogout(false);
+                  navigate({ to: "/login" });
+                } finally {
+                  setLoggingOut(false);
+                }
+              }}
+              className="rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Confirmer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <BottomNav />
     </div>
   );
