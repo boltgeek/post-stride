@@ -30,6 +30,9 @@ export const Route = createFileRoute("/account")({
 function AccountPage() {
   const { user, loading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
+  const [confirmLogout, setConfirmLogout] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+
 
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
