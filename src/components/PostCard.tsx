@@ -258,26 +258,31 @@ export function PostCard({ post, isNext }: PostCardProps) {
 
         <button
           onClick={() => setEditing(true)}
-          className="w-full mb-3 flex items-center justify-center gap-2 rounded-xl border border-dashed border-primary/50 text-primary text-sm font-semibold py-2.5 hover:bg-primary/5 transition-colors"
+          style={{ height: 48, borderRadius: 12, fontWeight: 600 }}
+          className="w-full mb-3 flex items-center justify-center gap-2 border border-dashed border-primary/60 text-primary text-sm hover:bg-primary/5 transition-colors overflow-hidden px-3"
         >
-          <Pencil className="w-4 h-4" /> Personnaliser ✏️
+          <Pencil className="w-4 h-4 shrink-0" />
+          <span className="truncate">Personnaliser</span>
         </button>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 w-full">
           <Button
             variant="outline"
             onClick={handleCopy}
-            className="flex-1 rounded-xl h-12 text-sm font-semibold border-primary text-primary hover:bg-primary/5 hover:text-primary"
+            style={{ height: 48, borderRadius: 12, fontWeight: 600 }}
+            className="flex-1 min-w-0 basis-1/2 text-sm border-primary text-primary hover:bg-primary/5 hover:text-primary overflow-hidden px-2"
           >
-            {copied ? <Check className="w-4 h-4 mr-1 text-success" /> : <Copy className="w-4 h-4 mr-1" />}
-            Copier
+            {copied ? <Check className="w-4 h-4 mr-1 text-success shrink-0" /> : <Copy className="w-4 h-4 mr-1 shrink-0" />}
+            <span className="truncate">Copier</span>
           </Button>
           <Button
             onClick={() => setConfirmPublish(true)}
             disabled={acting}
-            className="flex-1 rounded-xl h-12 text-sm font-semibold bg-success text-success-foreground hover:bg-success/90"
+            style={{ height: 48, borderRadius: 12, fontWeight: 600 }}
+            className="flex-1 min-w-0 basis-1/2 text-sm bg-success text-success-foreground hover:bg-success/90 overflow-hidden px-2"
           >
-            <Check className="w-4 h-4 mr-1" /> Marquer comme publié
+            <Check className="w-4 h-4 mr-1 shrink-0" />
+            <span className="truncate">Publié</span>
           </Button>
         </div>
 
