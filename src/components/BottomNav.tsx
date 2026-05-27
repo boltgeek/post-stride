@@ -1,11 +1,11 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Home, Calendar, BarChart3, MessageCircle } from "lucide-react";
+import { Home, Calendar, BarChart3, TrendingUp } from "lucide-react";
 
 const navItems = [
   { to: "/home", icon: Home, label: "Accueil" },
   { to: "/calendar", icon: Calendar, label: "Calendrier" },
   { to: "/analytics", icon: BarChart3, label: "Classement" },
-  { to: "/coach", icon: MessageCircle, label: "Coach" },
+  { to: "/suivi", icon: TrendingUp, label: "Suivi" },
 ] as const;
 
 export function BottomNav() {

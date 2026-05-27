@@ -10,9 +10,9 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UploadRouteImport } from './routes/upload'
+import { Route as SuiviRouteImport } from './routes/suivi'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as HomeRouteImport } from './routes/home'
-import { Route as CoachRouteImport } from './routes/coach'
 import { Route as CalendarRouteImport } from './routes/calendar'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as AccountRouteImport } from './routes/account'
@@ -26,6 +26,11 @@ const UploadRoute = UploadRouteImport.update({
   path: '/upload',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SuiviRoute = SuiviRouteImport.update({
+  id: '/suivi',
+  path: '/suivi',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -34,11 +39,6 @@ const LoginRoute = LoginRouteImport.update({
 const HomeRoute = HomeRouteImport.update({
   id: '/home',
   path: '/home',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CoachRoute = CoachRouteImport.update({
-  id: '/coach',
-  path: '/coach',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CalendarRoute = CalendarRouteImport.update({
@@ -83,9 +83,9 @@ export interface FileRoutesByFullPath {
   '/account': typeof AccountRoute
   '/analytics': typeof AnalyticsRoute
   '/calendar': typeof CalendarRoute
-  '/coach': typeof CoachRoute
   '/home': typeof HomeRoute
   '/login': typeof LoginRoute
+  '/suivi': typeof SuiviRoute
   '/upload': typeof UploadRoute
   '/challenge/$id': typeof ChallengeIdRoute
   '/challenge/create': typeof ChallengeCreateRoute
@@ -96,9 +96,9 @@ export interface FileRoutesByTo {
   '/account': typeof AccountRoute
   '/analytics': typeof AnalyticsRoute
   '/calendar': typeof CalendarRoute
-  '/coach': typeof CoachRoute
   '/home': typeof HomeRoute
   '/login': typeof LoginRoute
+  '/suivi': typeof SuiviRoute
   '/upload': typeof UploadRoute
   '/challenge/$id': typeof ChallengeIdRoute
   '/challenge/create': typeof ChallengeCreateRoute
@@ -110,9 +110,9 @@ export interface FileRoutesById {
   '/account': typeof AccountRoute
   '/analytics': typeof AnalyticsRoute
   '/calendar': typeof CalendarRoute
-  '/coach': typeof CoachRoute
   '/home': typeof HomeRoute
   '/login': typeof LoginRoute
+  '/suivi': typeof SuiviRoute
   '/upload': typeof UploadRoute
   '/challenge/$id': typeof ChallengeIdRoute
   '/challenge/create': typeof ChallengeCreateRoute
@@ -125,9 +125,9 @@ export interface FileRouteTypes {
     | '/account'
     | '/analytics'
     | '/calendar'
-    | '/coach'
     | '/home'
     | '/login'
+    | '/suivi'
     | '/upload'
     | '/challenge/$id'
     | '/challenge/create'
@@ -138,9 +138,9 @@ export interface FileRouteTypes {
     | '/account'
     | '/analytics'
     | '/calendar'
-    | '/coach'
     | '/home'
     | '/login'
+    | '/suivi'
     | '/upload'
     | '/challenge/$id'
     | '/challenge/create'
@@ -151,9 +151,9 @@ export interface FileRouteTypes {
     | '/account'
     | '/analytics'
     | '/calendar'
-    | '/coach'
     | '/home'
     | '/login'
+    | '/suivi'
     | '/upload'
     | '/challenge/$id'
     | '/challenge/create'
@@ -165,9 +165,9 @@ export interface RootRouteChildren {
   AccountRoute: typeof AccountRoute
   AnalyticsRoute: typeof AnalyticsRoute
   CalendarRoute: typeof CalendarRoute
-  CoachRoute: typeof CoachRoute
   HomeRoute: typeof HomeRoute
   LoginRoute: typeof LoginRoute
+  SuiviRoute: typeof SuiviRoute
   UploadRoute: typeof UploadRoute
   ChallengeIdRoute: typeof ChallengeIdRoute
   ChallengeCreateRoute: typeof ChallengeCreateRoute
@@ -183,6 +183,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UploadRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/suivi': {
+      id: '/suivi'
+      path: '/suivi'
+      fullPath: '/suivi'
+      preLoaderRoute: typeof SuiviRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -195,13 +202,6 @@ declare module '@tanstack/react-router' {
       path: '/home'
       fullPath: '/home'
       preLoaderRoute: typeof HomeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/coach': {
-      id: '/coach'
-      path: '/coach'
-      fullPath: '/coach'
-      preLoaderRoute: typeof CoachRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/calendar': {
@@ -261,9 +261,9 @@ const rootRouteChildren: RootRouteChildren = {
   AccountRoute: AccountRoute,
   AnalyticsRoute: AnalyticsRoute,
   CalendarRoute: CalendarRoute,
-  CoachRoute: CoachRoute,
   HomeRoute: HomeRoute,
   LoginRoute: LoginRoute,
+  SuiviRoute: SuiviRoute,
   UploadRoute: UploadRoute,
   ChallengeIdRoute: ChallengeIdRoute,
   ChallengeCreateRoute: ChallengeCreateRoute,

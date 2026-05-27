@@ -235,7 +235,7 @@ function Landing() {
           <nav className="flex items-center gap-6 text-sm text-neutral-700">
             <a href="/privacy" className="hover:text-neutral-900">Politique de confidentialité</a>
             <a href="/terms" className="hover:text-neutral-900">Conditions d'utilisation</a>
-            <Link to="/coach" className="hover:text-neutral-900">Contact</Link>
+            <Link to="/suivi" className="hover:text-neutral-900">Contact</Link>
           </nav>
         </div>
       </footer>
