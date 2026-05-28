@@ -89,11 +89,20 @@ function SuiviPage() {
     <div className="min-h-screen bg-[hsl(40,40%,96%)] pb-32">
       <div className="max-w-lg mx-auto px-4 pt-6 space-y-5">
         {/* Greeting */}
-        <header>
-          <h1 className="text-2xl font-bold text-neutral-900">
-            Bonjour {firstName} 👋
-          </h1>
-          <p className="text-sm text-neutral-600 mt-1">Voici ton suivi du mois</p>
+        <header className="flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold text-neutral-900">
+              Bonjour {firstName} 👋
+            </h1>
+            <p className="text-sm text-neutral-600 mt-1">Voici ton suivi du mois</p>
+          </div>
+          <button
+            onClick={() => setShowProducts(true)}
+            aria-label={`Gérer mes ${data.profile?.activityType || "produits"}`}
+            className="shrink-0 mt-1 w-10 h-10 rounded-full bg-white border border-neutral-200 flex items-center justify-center text-neutral-600 active:scale-95 transition shadow-sm"
+          >
+            <Settings className="w-5 h-5" />
+          </button>
         </header>
 
         {/* Financial cards */}
