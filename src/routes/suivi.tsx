@@ -97,10 +97,11 @@ function SuiviPage() {
         </header>
 
         {/* Financial cards */}
-        <div className="grid grid-cols-3 gap-2">
-          <FinCard label="Encaissé" value={stats.encaisse} bg="bg-emerald-500" />
+        <div className="grid grid-cols-2 gap-3">
+          <FinCard label="Encaissé ce mois" value={stats.encaisse} bg="bg-emerald-500" />
           <FinCard label="À récupérer" value={stats.aRecuperer} bg="bg-orange-500" />
-          <FinCard label="Bénéfice" value={stats.benefice} bg="bg-[hsl(220,40%,20%)]" />
+          <FinCard label="Dépenses ce mois" value={stats.depenses} bg="bg-red-500" />
+          <FinCard label="Bénéfice réel" value={stats.benefice} bg="bg-[hsl(220,40%,20%)]" />
         </div>
 
         {/* Smart alert */}
