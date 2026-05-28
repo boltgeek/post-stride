@@ -157,25 +157,31 @@ function SuiviPage() {
       </div>
 
       {/* Bottom CTAs */}
-      <div className="fixed bottom-16 left-0 right-0 z-40 px-4 pb-3 pt-3 bg-gradient-to-t from-[hsl(40,40%,96%)] via-[hsl(40,40%,96%)]/95 to-transparent">
-        <div className="max-w-lg mx-auto grid grid-cols-2 gap-3">
+      <div className="fixed bottom-16 left-0 right-0 z-40 px-3 pb-3 pt-3 bg-gradient-to-t from-[hsl(40,40%,96%)] via-[hsl(40,40%,96%)]/95 to-transparent">
+        <div className="max-w-lg mx-auto grid grid-cols-3 gap-2">
           <Button
             onClick={() => {
               if (!data.products.length) { toast.error("Ajoute d'abord un produit"); setShowProducts(true); return; }
               setShowProspect("new");
             }}
-            className="h-12 rounded-xl font-semibold bg-orange-500 hover:bg-orange-600 text-white shadow-lg"
+            className="h-12 rounded-xl font-semibold text-sm px-2 bg-orange-500 hover:bg-orange-600 text-white shadow-lg"
           >
-            <Plus className="w-4 h-4 mr-1" /> Prospect
+            <Plus className="w-4 h-4 mr-1 shrink-0" /> <span className="truncate">Prospect</span>
           </Button>
           <Button
             onClick={() => {
               if (!data.products.length) { toast.error("Ajoute d'abord un produit"); setShowProducts(true); return; }
               setShowSale("new");
             }}
-            className="h-12 rounded-xl font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg"
+            className="h-12 rounded-xl font-semibold text-sm px-2 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg"
           >
-            <Plus className="w-4 h-4 mr-1" /> Vente
+            <Plus className="w-4 h-4 mr-1 shrink-0" /> <span className="truncate">Vente</span>
+          </Button>
+          <Button
+            onClick={() => setShowExpense("new")}
+            className="h-12 rounded-xl font-semibold text-sm px-2 bg-red-500 hover:bg-red-600 text-white shadow-lg"
+          >
+            <Plus className="w-4 h-4 mr-1 shrink-0" /> <span className="truncate">Dépense</span>
           </Button>
         </div>
       </div>
