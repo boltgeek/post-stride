@@ -63,7 +63,8 @@ function SuiviPage() {
     }, 0);
     const aRecuperer = monthSales.reduce((sum, s) =>
       s.status === "Doit encore" ? sum + (s.amountRemaining || 0) : sum, 0);
-    const benefice = encaisse; // bénéfice réel = encaissé (pas de coûts dans MVP)
+    const depenses = data.expenses.filter(e => isCurrentMonth(e.date)).reduce((sum, e) => sum + e.amount, 0);
+    const benefice = encaisse - depenses;
 
     // Produit star
     const productCount: Record<string, number> = {};
