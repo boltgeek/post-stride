@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useMemo, useEffect } from "react";
-import { Plus, AlertTriangle, Trophy, MessageCircle, Phone, X, Trash2, Wallet } from "lucide-react";
+import { Plus, AlertTriangle, Trophy, MessageCircle, Phone, X, Trash2, Wallet, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
