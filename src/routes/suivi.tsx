@@ -284,10 +284,70 @@ function SuiviPage() {
 
 function FinCard({ label, value, bg }: { label: string; value: number; bg: string }) {
   return (
-    <div className={`${bg} text-white rounded-2xl p-3 shadow-sm`}>
-      <div className="text-[10px] font-medium opacity-90 uppercase tracking-wide">{label}</div>
-      <div className="text-lg font-bold mt-1 leading-tight">{fmt(value)}</div>
+    <div className={`${bg} text-white rounded-2xl p-4 shadow-md min-w-0`}>
+      <div className="text-[11px] font-semibold opacity-90 uppercase tracking-wide truncate">{label}</div>
+      <div className="text-2xl font-extrabold mt-2 leading-none tracking-tight truncate">{fmt(value)}</div>
     </div>
+  );
+}
+
+function ExpenseModal({ open, expense, onClose, onSave, onDelete }: {
+  open: boolean;
+  expense: Expense | null;
+  onClose: () => void;
+  onSave: (e: Expense) => void;
+  onDelete: (id: string) => void;
+}) {
+  const [form, setForm] = useState<Expense>(expense || {
+    id: uid(), category: "Stock", amount: 0, date: todayISO(), note: "",
+  });
+
+  useEffect(() => {
+    setForm(expense || { id: uid(), category: "Stock", amount: 0, date: todayISO(), note: "" });
+  }, [expense, open]);
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-md rounded-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Wallet className="w-5 h-5 text-red-500" />
+            {expense ? "Dépense" : "Nouvelle dépense"}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <Field label="Catégorie">
+            <Select value={form.category} onValueChange={(v: ExpenseCategory) => setForm({ ...form, category: v })}>
+              <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {(["Stock", "Livraison", "Publicité", "Autre"] as ExpenseCategory[]).map(c =>
+                  <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Montant (F)">
+            <Input type="number" value={form.amount} onChange={e => setForm({ ...form, amount: Number(e.target.value) })} className="h-11" />
+          </Field>
+          <Field label="Date">
+            <Input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} className="h-11" />
+          </Field>
+          <Field label="Note (optionnelle)">
+            <Textarea value={form.note || ""} onChange={e => setForm({ ...form, note: e.target.value })} rows={2} />
+          </Field>
+        </div>
+        <div className="space-y-2 pt-2">
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="outline" onClick={onClose} className="h-11 rounded-xl">Annuler</Button>
+            <Button onClick={() => onSave(form)} disabled={!form.amount} className="h-11 rounded-xl bg-red-500 hover:bg-red-600 text-white">Enregistrer</Button>
+          </div>
+          {expense && (
+            <Button variant="ghost" onClick={() => onDelete(expense.id)} className="w-full text-destructive">
+              <Trash2 className="w-4 h-4 mr-2" /> Supprimer
+            </Button>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
