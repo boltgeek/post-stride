@@ -52,6 +52,7 @@ interface SuiviData {
   products: Product[];
   prospects: Prospect[];
   sales: Sale[];
+  expenses: Expense[];
 }
 
 const DEFAULT: SuiviData = {
@@ -59,6 +60,7 @@ const DEFAULT: SuiviData = {
   products: [],
   prospects: [],
   sales: [],
+  expenses: [],
 };
 
 export function loadSuivi(): SuiviData {
