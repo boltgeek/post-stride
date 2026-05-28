@@ -44,6 +44,7 @@ function SuiviPage() {
   const [showSetup, setShowSetup] = useState(false);
   const [showProspect, setShowProspect] = useState<Prospect | "new" | null>(null);
   const [showSale, setShowSale] = useState<Sale | "new" | null>(null);
+  const [showExpense, setShowExpense] = useState<Expense | "new" | null>(null);
   const [showList, setShowList] = useState<"prospects" | "sales" | null>(null);
   const [showProducts, setShowProducts] = useState(false);
 
