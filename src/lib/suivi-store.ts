@@ -1,6 +1,15 @@
 // Local storage for Suivi (CRM léger) — prospects, ventes, produits, profil
 export type ProspectStatus = "Nouveau" | "Relancé" | "Converti" | "Perdu";
 export type SaleStatus = "Payé" | "Doit encore";
+export type ExpenseCategory = "Stock" | "Livraison" | "Publicité" | "Autre";
+
+export interface Expense {
+  id: string;
+  category: ExpenseCategory;
+  amount: number;
+  date: string;
+  note?: string;
+}
 
 export interface Product {
   id: string;
@@ -43,6 +52,7 @@ interface SuiviData {
   products: Product[];
   prospects: Prospect[];
   sales: Sale[];
+  expenses: Expense[];
 }
 
 const DEFAULT: SuiviData = {
@@ -50,6 +60,7 @@ const DEFAULT: SuiviData = {
   products: [],
   prospects: [],
   sales: [],
+  expenses: [],
 };
 
 export function loadSuivi(): SuiviData {

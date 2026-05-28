@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useMemo, useEffect } from "react";
-import { Plus, AlertTriangle, Trophy, MessageCircle, Phone, X, Trash2 } from "lucide-react";
+import { Plus, AlertTriangle, Trophy, MessageCircle, Phone, X, Trash2, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,7 @@ import { useAuth } from "@/lib/auth";
 import { useSuivi } from "@/hooks/use-suivi";
 import {
   type Prospect, type Sale, type Product, type ProspectStatus, type SaleStatus,
+  type Expense, type ExpenseCategory,
   uid, todayISO, daysBetween, isCurrentMonth,
 } from "@/lib/suivi-store";
 import { toast } from "sonner";
@@ -43,6 +44,7 @@ function SuiviPage() {
   const [showSetup, setShowSetup] = useState(false);
   const [showProspect, setShowProspect] = useState<Prospect | "new" | null>(null);
   const [showSale, setShowSale] = useState<Sale | "new" | null>(null);
+  const [showExpense, setShowExpense] = useState<Expense | "new" | null>(null);
   const [showList, setShowList] = useState<"prospects" | "sales" | null>(null);
   const [showProducts, setShowProducts] = useState(false);
 
@@ -61,7 +63,8 @@ function SuiviPage() {
     }, 0);
     const aRecuperer = monthSales.reduce((sum, s) =>
       s.status === "Doit encore" ? sum + (s.amountRemaining || 0) : sum, 0);
-    const benefice = encaisse; // bénéfice réel = encaissé (pas de coûts dans MVP)
+    const depenses = data.expenses.filter(e => isCurrentMonth(e.date)).reduce((sum, e) => sum + e.amount, 0);
+    const benefice = encaisse - depenses;
 
     // Produit star
     const productCount: Record<string, number> = {};
@@ -77,7 +80,7 @@ function SuiviPage() {
       return daysBetween(last, today) >= 3;
     });
 
-    return { encaisse, aRecuperer, benefice, star, stale };
+    return { encaisse, aRecuperer, depenses, benefice, star, stale };
   }, [data]);
 
   const productById = (id: string) => data.products.find(p => p.id === id);
@@ -94,10 +97,11 @@ function SuiviPage() {
         </header>
 
         {/* Financial cards */}
-        <div className="grid grid-cols-3 gap-2">
-          <FinCard label="Encaissé" value={stats.encaisse} bg="bg-emerald-500" />
+        <div className="grid grid-cols-2 gap-3">
+          <FinCard label="Encaissé ce mois" value={stats.encaisse} bg="bg-emerald-500" />
           <FinCard label="À récupérer" value={stats.aRecuperer} bg="bg-orange-500" />
-          <FinCard label="Bénéfice" value={stats.benefice} bg="bg-[hsl(220,40%,20%)]" />
+          <FinCard label="Dépenses ce mois" value={stats.depenses} bg="bg-red-500" />
+          <FinCard label="Bénéfice réel" value={stats.benefice} bg="bg-[hsl(220,40%,20%)]" />
         </div>
 
         {/* Smart alert */}
@@ -153,25 +157,31 @@ function SuiviPage() {
       </div>
 
       {/* Bottom CTAs */}
-      <div className="fixed bottom-16 left-0 right-0 z-40 px-4 pb-3 pt-3 bg-gradient-to-t from-[hsl(40,40%,96%)] via-[hsl(40,40%,96%)]/95 to-transparent">
-        <div className="max-w-lg mx-auto grid grid-cols-2 gap-3">
+      <div className="fixed bottom-16 left-0 right-0 z-40 px-3 pb-3 pt-3 bg-gradient-to-t from-[hsl(40,40%,96%)] via-[hsl(40,40%,96%)]/95 to-transparent">
+        <div className="max-w-lg mx-auto grid grid-cols-3 gap-2">
           <Button
             onClick={() => {
               if (!data.products.length) { toast.error("Ajoute d'abord un produit"); setShowProducts(true); return; }
               setShowProspect("new");
             }}
-            className="h-12 rounded-xl font-semibold bg-orange-500 hover:bg-orange-600 text-white shadow-lg"
+            className="h-12 rounded-xl font-semibold text-sm px-2 bg-orange-500 hover:bg-orange-600 text-white shadow-lg"
           >
-            <Plus className="w-4 h-4 mr-1" /> Prospect
+            <Plus className="w-4 h-4 mr-1 shrink-0" /> <span className="truncate">Prospect</span>
           </Button>
           <Button
             onClick={() => {
               if (!data.products.length) { toast.error("Ajoute d'abord un produit"); setShowProducts(true); return; }
               setShowSale("new");
             }}
-            className="h-12 rounded-xl font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg"
+            className="h-12 rounded-xl font-semibold text-sm px-2 bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg"
           >
-            <Plus className="w-4 h-4 mr-1" /> Vente
+            <Plus className="w-4 h-4 mr-1 shrink-0" /> <span className="truncate">Vente</span>
+          </Button>
+          <Button
+            onClick={() => setShowExpense("new")}
+            className="h-12 rounded-xl font-semibold text-sm px-2 bg-red-500 hover:bg-red-600 text-white shadow-lg"
+          >
+            <Plus className="w-4 h-4 mr-1 shrink-0" /> <span className="truncate">Dépense</span>
           </Button>
         </div>
       </div>
@@ -226,6 +236,24 @@ function SuiviPage() {
         }}
       />
 
+      <ExpenseModal
+        open={showExpense !== null}
+        expense={showExpense === "new" ? null : showExpense}
+        onClose={() => setShowExpense(null)}
+        onSave={(e) => {
+          update(d => {
+            const exists = d.expenses.find(x => x.id === e.id);
+            return { ...d, expenses: exists ? d.expenses.map(x => x.id === e.id ? e : x) : [...d.expenses, e] };
+          });
+          setShowExpense(null);
+          toast.success("Dépense enregistrée");
+        }}
+        onDelete={(id) => {
+          update(d => ({ ...d, expenses: d.expenses.filter(x => x.id !== id) }));
+          setShowExpense(null);
+        }}
+      />
+
       <ListModal
         type={showList}
         prospects={data.prospects}
@@ -256,10 +284,70 @@ function SuiviPage() {
 
 function FinCard({ label, value, bg }: { label: string; value: number; bg: string }) {
   return (
-    <div className={`${bg} text-white rounded-2xl p-3 shadow-sm`}>
-      <div className="text-[10px] font-medium opacity-90 uppercase tracking-wide">{label}</div>
-      <div className="text-lg font-bold mt-1 leading-tight">{fmt(value)}</div>
+    <div className={`${bg} text-white rounded-2xl p-4 shadow-md min-w-0`}>
+      <div className="text-[11px] font-semibold opacity-90 uppercase tracking-wide truncate">{label}</div>
+      <div className="text-2xl font-extrabold mt-2 leading-none tracking-tight truncate">{fmt(value)}</div>
     </div>
+  );
+}
+
+function ExpenseModal({ open, expense, onClose, onSave, onDelete }: {
+  open: boolean;
+  expense: Expense | null;
+  onClose: () => void;
+  onSave: (e: Expense) => void;
+  onDelete: (id: string) => void;
+}) {
+  const [form, setForm] = useState<Expense>(expense || {
+    id: uid(), category: "Stock", amount: 0, date: todayISO(), note: "",
+  });
+
+  useEffect(() => {
+    setForm(expense || { id: uid(), category: "Stock", amount: 0, date: todayISO(), note: "" });
+  }, [expense, open]);
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-md rounded-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Wallet className="w-5 h-5 text-red-500" />
+            {expense ? "Dépense" : "Nouvelle dépense"}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <Field label="Catégorie">
+            <Select value={form.category} onValueChange={(v: ExpenseCategory) => setForm({ ...form, category: v })}>
+              <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {(["Stock", "Livraison", "Publicité", "Autre"] as ExpenseCategory[]).map(c =>
+                  <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Montant (F)">
+            <Input type="number" value={form.amount} onChange={e => setForm({ ...form, amount: Number(e.target.value) })} className="h-11" />
+          </Field>
+          <Field label="Date">
+            <Input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} className="h-11" />
+          </Field>
+          <Field label="Note (optionnelle)">
+            <Textarea value={form.note || ""} onChange={e => setForm({ ...form, note: e.target.value })} rows={2} />
+          </Field>
+        </div>
+        <div className="space-y-2 pt-2">
+          <div className="grid grid-cols-2 gap-2">
+            <Button variant="outline" onClick={onClose} className="h-11 rounded-xl">Annuler</Button>
+            <Button onClick={() => onSave(form)} disabled={!form.amount} className="h-11 rounded-xl bg-red-500 hover:bg-red-600 text-white">Enregistrer</Button>
+          </div>
+          {expense && (
+            <Button variant="ghost" onClick={() => onDelete(expense.id)} className="w-full text-destructive">
+              <Trash2 className="w-4 h-4 mr-2" /> Supprimer
+            </Button>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
