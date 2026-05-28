@@ -236,6 +236,24 @@ function SuiviPage() {
         }}
       />
 
+      <ExpenseModal
+        open={showExpense !== null}
+        expense={showExpense === "new" ? null : showExpense}
+        onClose={() => setShowExpense(null)}
+        onSave={(e) => {
+          update(d => {
+            const exists = d.expenses.find(x => x.id === e.id);
+            return { ...d, expenses: exists ? d.expenses.map(x => x.id === e.id ? e : x) : [...d.expenses, e] };
+          });
+          setShowExpense(null);
+          toast.success("Dépense enregistrée");
+        }}
+        onDelete={(id) => {
+          update(d => ({ ...d, expenses: d.expenses.filter(x => x.id !== id) }));
+          setShowExpense(null);
+        }}
+      />
+
       <ListModal
         type={showList}
         prospects={data.prospects}
