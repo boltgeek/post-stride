@@ -80,7 +80,7 @@ function SuiviPage() {
       return daysBetween(last, today) >= 3;
     });
 
-    return { encaisse, aRecuperer, benefice, star, stale };
+    return { encaisse, aRecuperer, depenses, benefice, star, stale };
   }, [data]);
 
   const productById = (id: string) => data.products.find(p => p.id === id);
