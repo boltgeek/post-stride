@@ -157,12 +157,6 @@ function SuiviPage() {
           </button>
         </div>
 
-        <button
-          onClick={() => setShowProducts(true)}
-          className="w-full text-xs text-neutral-500 underline text-center pt-2"
-        >
-          Gérer mes {data.profile?.activityType || "produits"} ({data.products.length})
-        </button>
       </div>
 
       {/* Bottom CTAs */}
