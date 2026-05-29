@@ -596,20 +596,20 @@ function SaleModal({ open, sale, products, onClose, onSave, onDelete }: {
 }) {
   const [form, setForm] = useState<Sale>(sale || {
     id: uid(), clientName: "", whatsapp: "", productId: products[0]?.id || "",
-    amount: products[0]?.price || 0, status: "Payé", date: todayISO(),
+    amount: products[0]?.price || 0, status: "Payée", date: todayISO(),
   });
 
   useEffect(() => {
     setForm(sale || {
       id: uid(), clientName: "", whatsapp: "", productId: products[0]?.id || "",
-      amount: products[0]?.price || 0, status: "Payé", date: todayISO(),
+      amount: products[0]?.price || 0, status: "Payée", date: todayISO(),
     });
   }, [sale, open]);
 
   const product = products.find(p => p.id === form.productId);
   const relancePaiement = () => {
     if (!form.whatsapp || !product) return;
-    const msg = `Bonjour ${form.clientName} 😊 Il reste ${form.amountRemaining || 0}F pour ton ${product.name}. Quand est-ce que ça t'arrange ?`;
+    const msg = `Bonjour ${form.clientName} 😊 Concernant ton ${product.name} (${form.amount}F), quand est-ce que le paiement t'arrange ?`;
     window.open(waLink(form.whatsapp, msg), "_blank");
   };
 
@@ -635,27 +635,23 @@ function SaleModal({ open, sale, products, onClose, onSave, onDelete }: {
           </Field>
           <Field label="Montant (F)"><Input type="number" value={form.amount} onChange={e => setForm({ ...form, amount: Number(e.target.value) })} className="h-11" /></Field>
           <Field label="Statut">
-            <Select value={form.status} onValueChange={(v: SaleStatus) => setForm({ ...form, status: v, amountRemaining: v === "Doit encore" ? (form.amountRemaining || form.amount) : undefined })}>
+            <Select value={form.status} onValueChange={(v: SaleStatus) => setForm({ ...form, status: v })}>
               <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="Payé">Payé</SelectItem>
-                <SelectItem value="Doit encore">Doit encore</SelectItem>
+                <SelectItem value="Payée">Payée</SelectItem>
+                <SelectItem value="En attente">En attente</SelectItem>
               </SelectContent>
             </Select>
           </Field>
-          {form.status === "Doit encore" && (
-            <Field label="Montant restant (F)">
-              <Input type="number" value={form.amountRemaining || 0} onChange={e => setForm({ ...form, amountRemaining: Number(e.target.value) })} className="h-11" />
-            </Field>
-          )}
           <Field label="Date"><Input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} className="h-11" /></Field>
         </div>
         <div className="space-y-2 pt-2">
-          {form.status === "Doit encore" && (
+          {form.status === "En attente" && (
             <Button onClick={relancePaiement} disabled={!form.whatsapp} className="w-full h-12 rounded-xl bg-amber-500 hover:bg-amber-600">
               <Phone className="w-4 h-4 mr-2" /> Relancer le paiement
             </Button>
           )}
+
           <div className="grid grid-cols-2 gap-2">
             <Button variant="outline" onClick={onClose} className="h-11 rounded-xl">Annuler</Button>
             <Button onClick={() => onSave(form)} disabled={!form.clientName || !form.productId} className="h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700">Enregistrer</Button>
