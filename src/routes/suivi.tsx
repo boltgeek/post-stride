@@ -101,8 +101,8 @@ function SuiviPage() {
             <p className="text-sm text-neutral-600 mt-1">Voici ton suivi du mois</p>
           </div>
           <button
-            onClick={() => setShowProducts(true)}
-            aria-label={`Gérer mes ${data.profile?.activityType || "produits"}`}
+            onClick={() => setShowSettings(true)}
+            aria-label="Paramètres"
             className="shrink-0 mt-1 w-10 h-10 rounded-full bg-white border border-neutral-200 flex items-center justify-center text-neutral-600 active:scale-95 transition shadow-sm"
           >
             <Settings className="w-5 h-5" />
