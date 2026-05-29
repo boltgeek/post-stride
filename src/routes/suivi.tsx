@@ -719,8 +719,8 @@ function ListModal({ type, prospects, sales, productById, onClose, onOpenProspec
                     </div>
                     <div className="text-right shrink-0">
                       <div className="font-bold text-neutral-900">{fmt(s.amount)}</div>
-                      <div className={`text-[10px] font-semibold ${s.status === "Payé" ? "text-emerald-600" : "text-orange-600"}`}>
-                        {s.status === "Payé" ? "Payé" : `Reste ${fmt(s.amountRemaining || 0)}`}
+                      <div className={`text-[10px] font-semibold ${s.status === "Payée" ? "text-emerald-600" : "text-orange-600"}`}>
+                        {s.status}
                       </div>
                     </div>
                   </div>
