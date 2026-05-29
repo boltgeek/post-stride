@@ -47,12 +47,20 @@ export interface SuiviProfile {
 
 const KEY = "routinepost.suivi.v1";
 
+export type Currency = "FCFA" | "XAF" | "EUR" | "USD";
+
+export interface SuiviSettings {
+  currency: Currency;
+  alertsEnabled: boolean;
+}
+
 interface SuiviData {
   profile: SuiviProfile | null;
   products: Product[];
   prospects: Prospect[];
   sales: Sale[];
   expenses: Expense[];
+  settings: SuiviSettings;
 }
 
 const DEFAULT: SuiviData = {
@@ -61,6 +69,7 @@ const DEFAULT: SuiviData = {
   prospects: [],
   sales: [],
   expenses: [],
+  settings: { currency: "FCFA", alertsEnabled: true },
 };
 
 export function loadSuivi(): SuiviData {
