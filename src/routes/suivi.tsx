@@ -1,18 +1,20 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useMemo, useEffect } from "react";
-import { Plus, AlertTriangle, Trophy, MessageCircle, Phone, X, Trash2, Wallet, Settings } from "lucide-react";
+import { Plus, AlertTriangle, Trophy, MessageCircle, Phone, X, Trash2, Wallet, Settings, LogOut, ChevronRight, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Switch } from "@/components/ui/switch";
 import { BottomNav } from "@/components/BottomNav";
 import { useAuth } from "@/lib/auth";
 import { useSuivi } from "@/hooks/use-suivi";
 import {
   type Prospect, type Sale, type Product, type ProspectStatus, type SaleStatus,
-  type Expense, type ExpenseCategory,
+  type Expense, type ExpenseCategory, type Currency, type SuiviSettings,
   uid, todayISO, daysBetween, isCurrentMonth,
 } from "@/lib/suivi-store";
 import { toast } from "sonner";
@@ -39,7 +41,8 @@ const STATUS_COLORS: Record<ProspectStatus, string> = {
 };
 
 function SuiviPage() {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const { data, update } = useSuivi();
   const [showSetup, setShowSetup] = useState(false);
   const [showProspect, setShowProspect] = useState<Prospect | "new" | null>(null);
@@ -47,6 +50,7 @@ function SuiviPage() {
   const [showExpense, setShowExpense] = useState<Expense | "new" | null>(null);
   const [showList, setShowList] = useState<"prospects" | "sales" | null>(null);
   const [showProducts, setShowProducts] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
     if (!data.profile?.setupDone) setShowSetup(true);
@@ -97,8 +101,8 @@ function SuiviPage() {
             <p className="text-sm text-neutral-600 mt-1">Voici ton suivi du mois</p>
           </div>
           <button
-            onClick={() => setShowProducts(true)}
-            aria-label={`Gérer mes ${data.profile?.activityType || "produits"}`}
+            onClick={() => setShowSettings(true)}
+            aria-label="Paramètres"
             className="shrink-0 mt-1 w-10 h-10 rounded-full bg-white border border-neutral-200 flex items-center justify-center text-neutral-600 active:scale-95 transition shadow-sm"
           >
             <Settings className="w-5 h-5" />
@@ -280,6 +284,26 @@ function SuiviPage() {
         onClose={() => setShowProducts(false)}
         onAdd={(p) => update(d => ({ ...d, products: [...d.products, p] }))}
         onRemove={(id) => update(d => ({ ...d, products: d.products.filter(p => p.id !== id) }))}
+      />
+
+      <SettingsModal
+        open={showSettings}
+        firstName={data.profile?.firstName || ""}
+        activityType={data.profile?.activityType || "produits"}
+        settings={data.settings}
+        onClose={() => setShowSettings(false)}
+        onSaveProfile={(firstName, activityType) => {
+          update(d => ({ ...d, profile: { ...(d.profile || { setupDone: true }), firstName, activityType, setupDone: true } }));
+          toast.success("Profil mis à jour");
+        }}
+        onSaveSettings={(s) => {
+          update(d => ({ ...d, settings: s }));
+        }}
+        onManageProducts={() => { setShowSettings(false); setShowProducts(true); }}
+        onLogout={async () => {
+          await signOut();
+          navigate({ to: "/login" });
+        }}
       />
     </div>
   );
@@ -706,5 +730,170 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <Label className="text-xs text-neutral-600">{label}</Label>
       <div className="mt-1">{children}</div>
     </div>
+  );
+}
+
+// ---------- SETTINGS MODAL ----------
+function SettingsModal({
+  open, firstName, activityType, settings, onClose,
+  onSaveProfile, onSaveSettings, onManageProducts, onLogout,
+}: {
+  open: boolean;
+  firstName: string;
+  activityType: "produits" | "services";
+  settings: SuiviSettings;
+  onClose: () => void;
+  onSaveProfile: (firstName: string, activityType: "produits" | "services") => void;
+  onSaveSettings: (s: SuiviSettings) => void;
+  onManageProducts: () => void;
+  onLogout: () => void | Promise<void>;
+}) {
+  const [name, setName] = useState(firstName);
+  const [type, setType] = useState<"produits" | "services">(activityType);
+  const [currency, setCurrency] = useState<Currency>(settings.currency);
+  const [alerts, setAlerts] = useState<boolean>(settings.alertsEnabled);
+  const [confirmLogout, setConfirmLogout] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setName(firstName);
+      setType(activityType);
+      setCurrency(settings.currency);
+      setAlerts(settings.alertsEnabled);
+    }
+  }, [open, firstName, activityType, settings]);
+
+  const profileDirty = name.trim() !== firstName || type !== activityType;
+  const settingsDirty = currency !== settings.currency || alerts !== settings.alertsEnabled;
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+        <DialogContent className="max-w-md rounded-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Paramètres</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-6">
+            {/* Mon profil */}
+            <section className="space-y-3">
+              <h3 className="text-xs font-bold uppercase tracking-wide text-neutral-500">Mon profil</h3>
+              <Field label="Prénom">
+                <Input value={name} onChange={(e) => setName(e.target.value)} className="h-11" />
+              </Field>
+              <Field label="Type d'activité">
+                <Select value={type} onValueChange={(v: "produits" | "services") => setType(v)}>
+                  <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="produits">Produits</SelectItem>
+                    <SelectItem value="services">Services</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Button
+                disabled={!name.trim() || !profileDirty}
+                onClick={() => onSaveProfile(name.trim(), type)}
+                className="w-full h-11 rounded-xl bg-orange-500 hover:bg-orange-600 text-white"
+              >
+                Enregistrer le profil
+              </Button>
+            </section>
+
+            {/* Mes produits / services */}
+            <section className="space-y-2">
+              <h3 className="text-xs font-bold uppercase tracking-wide text-neutral-500">
+                Mes {type}
+              </h3>
+              <button
+                onClick={onManageProducts}
+                className="w-full flex items-center justify-between bg-white border border-neutral-200 rounded-xl px-4 h-12 text-sm font-medium text-neutral-800 active:scale-[0.98] transition"
+              >
+                <span>Gérer mes {type}</span>
+                <ChevronRight className="w-4 h-4 text-neutral-400" />
+              </button>
+            </section>
+
+            {/* Préférences */}
+            <section className="space-y-3">
+              <h3 className="text-xs font-bold uppercase tracking-wide text-neutral-500">Préférences</h3>
+              <Field label="Devise">
+                <Select value={currency} onValueChange={(v: Currency) => setCurrency(v)}>
+                  <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="FCFA">FCFA</SelectItem>
+                    <SelectItem value="XAF">XAF</SelectItem>
+                    <SelectItem value="EUR">€ (Euro)</SelectItem>
+                    <SelectItem value="USD">$ (Dollar)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+              <div className="flex items-center justify-between bg-white border border-neutral-200 rounded-xl px-4 h-12">
+                <div>
+                  <div className="text-sm font-medium text-neutral-800">Alertes relance</div>
+                  <div className="text-[11px] text-neutral-500">Prospects sans suivi 3+ jours</div>
+                </div>
+                <Switch checked={alerts} onCheckedChange={setAlerts} />
+              </div>
+              <Button
+                disabled={!settingsDirty}
+                onClick={() => onSaveSettings({ currency, alertsEnabled: alerts })}
+                className="w-full h-11 rounded-xl bg-orange-500 hover:bg-orange-600 text-white"
+              >
+                Enregistrer les préférences
+              </Button>
+            </section>
+
+            {/* Marketing — bientôt disponible */}
+            <section className="space-y-2 opacity-60">
+              <h3 className="text-xs font-bold uppercase tracking-wide text-neutral-500">Marketing</h3>
+              {["SMS Marketing", "WhatsApp Marketing"].map((label) => (
+                <div
+                  key={label}
+                  className="flex items-center justify-between bg-neutral-100 border border-neutral-200 rounded-xl px-4 h-12 cursor-not-allowed"
+                >
+                  <div className="flex items-center gap-2 text-sm font-medium text-neutral-700">
+                    <Lock className="w-3.5 h-3.5" /> {label}
+                  </div>
+                  <span className="text-[10px] font-bold uppercase tracking-wide bg-amber-100 text-amber-700 px-2 py-1 rounded-full">
+                    Bientôt
+                  </span>
+                </div>
+              ))}
+            </section>
+
+            {/* Compte */}
+            <section className="pt-4 border-t border-neutral-200">
+              <h3 className="text-xs font-bold uppercase tracking-wide text-neutral-500 mb-2">Compte</h3>
+              <button
+                onClick={() => setConfirmLogout(true)}
+                className="w-full h-12 rounded-xl bg-transparent text-red-600 font-semibold flex items-center justify-center gap-2 active:scale-[0.98] transition"
+              >
+                <LogOut className="w-4 h-4" /> Se déconnecter
+              </button>
+            </section>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={confirmLogout} onOpenChange={setConfirmLogout}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Se déconnecter</AlertDialogTitle>
+            <AlertDialogDescription>
+              Voulez-vous vraiment vous déconnecter ?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => { setConfirmLogout(false); await onLogout(); }}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Confirmer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
