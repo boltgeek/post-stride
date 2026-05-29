@@ -41,7 +41,8 @@ const STATUS_COLORS: Record<ProspectStatus, string> = {
 };
 
 function SuiviPage() {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   const { data, update } = useSuivi();
   const [showSetup, setShowSetup] = useState(false);
   const [showProspect, setShowProspect] = useState<Prospect | "new" | null>(null);
@@ -49,6 +50,7 @@ function SuiviPage() {
   const [showExpense, setShowExpense] = useState<Expense | "new" | null>(null);
   const [showList, setShowList] = useState<"prospects" | "sales" | null>(null);
   const [showProducts, setShowProducts] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
     if (!data.profile?.setupDone) setShowSetup(true);
