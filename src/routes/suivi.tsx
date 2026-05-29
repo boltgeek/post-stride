@@ -61,14 +61,15 @@ function SuiviPage() {
   // Calculs auto
   const stats = useMemo(() => {
     const monthSales = data.sales.filter(s => isCurrentMonth(s.date));
-    const encaisse = monthSales.reduce((sum, s) => {
-      if (s.status === "Payé") return sum + s.amount;
-      return sum + (s.amount - (s.amountRemaining || 0));
-    }, 0);
-    const aRecuperer = monthSales.reduce((sum, s) =>
-      s.status === "Doit encore" ? sum + (s.amountRemaining || 0) : sum, 0);
+    const paidSales = monthSales.filter(s => s.status === "Payée");
+    const encaisse = paidSales.reduce((sum, s) => sum + s.amount, 0);
+    const aRecuperer = monthSales
+      .filter(s => s.status === "En attente")
+      .reduce((sum, s) => sum + s.amount, 0);
     const depenses = data.expenses.filter(e => isCurrentMonth(e.date)).reduce((sum, e) => sum + e.amount, 0);
     const benefice = encaisse - depenses;
+    const salesCount = monthSales.length;
+    const avgSale = paidSales.length > 0 ? Math.round(encaisse / paidSales.length) : 0;
 
     // Produit star
     const productCount: Record<string, number> = {};
@@ -84,7 +85,22 @@ function SuiviPage() {
       return daysBetween(last, today) >= 3;
     });
 
-    return { encaisse, aRecuperer, depenses, benefice, star, stale };
+    // Prospects sans vente associée (match par whatsapp normalisé)
+    const norm = (w: string) => (w || "").replace(/\D/g, "");
+    const saleWhatsapps = new Set(data.sales.map(s => norm(s.whatsapp)).filter(Boolean));
+    const monthProspects = data.prospects.filter(p => isCurrentMonth(p.date));
+    const prospectsCount = monthProspects.length;
+    const toFollowUp = monthProspects.filter(p =>
+      p.status !== "Converti" && !saleWhatsapps.has(norm(p.whatsapp))
+    ).length;
+
+    // 5 dernières ventes (toutes)
+    const recentSales = [...data.sales]
+      .sort((a, b) => (a.date < b.date ? 1 : -1))
+      .slice(0, 5);
+
+    return { encaisse, aRecuperer, depenses, benefice, star, stale,
+             salesCount, avgSale, prospectsCount, toFollowUp, recentSales };
   }, [data]);
 
   const productById = (id: string) => data.products.find(p => p.id === id);
@@ -149,19 +165,62 @@ function SuiviPage() {
             onClick={() => setShowList("prospects")}
             className="bg-white rounded-2xl p-4 text-left shadow-sm border border-neutral-100 active:scale-95 transition"
           >
-            <div className="text-2xl font-bold text-neutral-900">{data.prospects.length}</div>
-            <div className="text-xs text-neutral-600 mt-1">Prospects</div>
+            <div className="text-2xl font-bold text-neutral-900">{stats.prospectsCount}</div>
+            <div className="text-xs text-neutral-600 mt-1">Prospects ce mois</div>
+            {stats.toFollowUp > 0 && (
+              <div className="text-[11px] text-orange-600 font-semibold mt-1">{stats.toFollowUp} à relancer</div>
+            )}
           </button>
           <button
             onClick={() => setShowList("sales")}
             className="bg-white rounded-2xl p-4 text-left shadow-sm border border-neutral-100 active:scale-95 transition"
           >
-            <div className="text-2xl font-bold text-neutral-900">{data.sales.filter(s => isCurrentMonth(s.date)).length}</div>
+            <div className="text-2xl font-bold text-neutral-900">{stats.salesCount}</div>
             <div className="text-xs text-neutral-600 mt-1">Ventes ce mois</div>
+            {stats.avgSale > 0 && (
+              <div className="text-[11px] text-emerald-600 font-semibold mt-1">Moy. {fmt(stats.avgSale)}</div>
+            )}
           </button>
         </div>
 
+        {/* Ventes récentes */}
+        {stats.recentSales.length > 0 && (
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-neutral-100 space-y-2">
+            <h3 className="text-xs font-bold uppercase tracking-wide text-neutral-500">Ventes récentes</h3>
+            <ul className="divide-y divide-neutral-100">
+              {stats.recentSales.map(s => {
+                const prod = productById(s.productId);
+                const pending = s.status === "En attente";
+                return (
+                  <li key={s.id} className="py-2 flex items-center gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-semibold text-neutral-900 truncate">{prod?.name || "—"}</div>
+                      <div className="text-xs text-neutral-500 truncate">{s.clientName}</div>
+                    </div>
+                    <div className="text-sm font-bold text-neutral-900 shrink-0">{fmt(s.amount)}</div>
+                    <span className={`text-[10px] px-2 py-1 rounded-full font-semibold shrink-0 ${pending ? "bg-orange-100 text-orange-700" : "bg-emerald-100 text-emerald-700"}`}>
+                      {s.status}
+                    </span>
+                    {pending && (
+                      <button
+                        onClick={() => {
+                          update(d => ({ ...d, sales: d.sales.map(x => x.id === s.id ? { ...x, status: "Payée" } : x) }));
+                          toast.success("Vente marquée payée");
+                        }}
+                        className="text-[10px] font-semibold text-emerald-700 underline shrink-0"
+                      >
+                        Marquer payée
+                      </button>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+
       </div>
+
 
       {/* Bottom CTAs */}
       <div className="fixed bottom-16 left-0 right-0 z-40 px-3 pb-3 pt-3 bg-gradient-to-t from-[hsl(40,40%,96%)] via-[hsl(40,40%,96%)]/95 to-transparent">
@@ -537,20 +596,20 @@ function SaleModal({ open, sale, products, onClose, onSave, onDelete }: {
 }) {
   const [form, setForm] = useState<Sale>(sale || {
     id: uid(), clientName: "", whatsapp: "", productId: products[0]?.id || "",
-    amount: products[0]?.price || 0, status: "Payé", date: todayISO(),
+    amount: products[0]?.price || 0, status: "Payée", date: todayISO(),
   });
 
   useEffect(() => {
     setForm(sale || {
       id: uid(), clientName: "", whatsapp: "", productId: products[0]?.id || "",
-      amount: products[0]?.price || 0, status: "Payé", date: todayISO(),
+      amount: products[0]?.price || 0, status: "Payée", date: todayISO(),
     });
   }, [sale, open]);
 
   const product = products.find(p => p.id === form.productId);
   const relancePaiement = () => {
     if (!form.whatsapp || !product) return;
-    const msg = `Bonjour ${form.clientName} 😊 Il reste ${form.amountRemaining || 0}F pour ton ${product.name}. Quand est-ce que ça t'arrange ?`;
+    const msg = `Bonjour ${form.clientName} 😊 Concernant ton ${product.name} (${form.amount}F), quand est-ce que le paiement t'arrange ?`;
     window.open(waLink(form.whatsapp, msg), "_blank");
   };
 
@@ -576,27 +635,23 @@ function SaleModal({ open, sale, products, onClose, onSave, onDelete }: {
           </Field>
           <Field label="Montant (F)"><Input type="number" value={form.amount} onChange={e => setForm({ ...form, amount: Number(e.target.value) })} className="h-11" /></Field>
           <Field label="Statut">
-            <Select value={form.status} onValueChange={(v: SaleStatus) => setForm({ ...form, status: v, amountRemaining: v === "Doit encore" ? (form.amountRemaining || form.amount) : undefined })}>
+            <Select value={form.status} onValueChange={(v: SaleStatus) => setForm({ ...form, status: v })}>
               <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="Payé">Payé</SelectItem>
-                <SelectItem value="Doit encore">Doit encore</SelectItem>
+                <SelectItem value="Payée">Payée</SelectItem>
+                <SelectItem value="En attente">En attente</SelectItem>
               </SelectContent>
             </Select>
           </Field>
-          {form.status === "Doit encore" && (
-            <Field label="Montant restant (F)">
-              <Input type="number" value={form.amountRemaining || 0} onChange={e => setForm({ ...form, amountRemaining: Number(e.target.value) })} className="h-11" />
-            </Field>
-          )}
           <Field label="Date"><Input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} className="h-11" /></Field>
         </div>
         <div className="space-y-2 pt-2">
-          {form.status === "Doit encore" && (
+          {form.status === "En attente" && (
             <Button onClick={relancePaiement} disabled={!form.whatsapp} className="w-full h-12 rounded-xl bg-amber-500 hover:bg-amber-600">
               <Phone className="w-4 h-4 mr-2" /> Relancer le paiement
             </Button>
           )}
+
           <div className="grid grid-cols-2 gap-2">
             <Button variant="outline" onClick={onClose} className="h-11 rounded-xl">Annuler</Button>
             <Button onClick={() => onSave(form)} disabled={!form.clientName || !form.productId} className="h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700">Enregistrer</Button>
@@ -664,8 +719,8 @@ function ListModal({ type, prospects, sales, productById, onClose, onOpenProspec
                     </div>
                     <div className="text-right shrink-0">
                       <div className="font-bold text-neutral-900">{fmt(s.amount)}</div>
-                      <div className={`text-[10px] font-semibold ${s.status === "Payé" ? "text-emerald-600" : "text-orange-600"}`}>
-                        {s.status === "Payé" ? "Payé" : `Reste ${fmt(s.amountRemaining || 0)}`}
+                      <div className={`text-[10px] font-semibold ${s.status === "Payée" ? "text-emerald-600" : "text-orange-600"}`}>
+                        {s.status}
                       </div>
                     </div>
                   </div>

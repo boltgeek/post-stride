@@ -1,6 +1,6 @@
 // Local storage for Suivi (CRM léger) — prospects, ventes, produits, profil
 export type ProspectStatus = "Nouveau" | "Relancé" | "Converti" | "Perdu";
-export type SaleStatus = "Payé" | "Doit encore";
+export type SaleStatus = "Payée" | "En attente";
 export type ExpenseCategory = "Stock" | "Livraison" | "Publicité" | "Autre";
 
 export interface Expense {
@@ -77,7 +77,16 @@ export function loadSuivi(): SuiviData {
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return DEFAULT;
-    return { ...DEFAULT, ...JSON.parse(raw) };
+    const parsed = JSON.parse(raw);
+    const merged: SuiviData = { ...DEFAULT, ...parsed };
+    // Backward-compat: normalize old SaleStatus values
+    merged.sales = (merged.sales || []).map((s: Sale) => {
+      const status = (s.status as string) === "Payé" ? "Payée"
+        : (s.status as string) === "Doit encore" ? "En attente"
+        : s.status;
+      return { ...s, status: (status || "Payée") as SaleStatus };
+    });
+    return merged;
   } catch {
     return DEFAULT;
   }
