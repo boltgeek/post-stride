@@ -285,6 +285,26 @@ function SuiviPage() {
         onAdd={(p) => update(d => ({ ...d, products: [...d.products, p] }))}
         onRemove={(id) => update(d => ({ ...d, products: d.products.filter(p => p.id !== id) }))}
       />
+
+      <SettingsModal
+        open={showSettings}
+        firstName={data.profile?.firstName || ""}
+        activityType={data.profile?.activityType || "produits"}
+        settings={data.settings}
+        onClose={() => setShowSettings(false)}
+        onSaveProfile={(firstName, activityType) => {
+          update(d => ({ ...d, profile: { ...(d.profile || { setupDone: true }), firstName, activityType, setupDone: true } }));
+          toast.success("Profil mis à jour");
+        }}
+        onSaveSettings={(s) => {
+          update(d => ({ ...d, settings: s }));
+        }}
+        onManageProducts={() => { setShowSettings(false); setShowProducts(true); }}
+        onLogout={async () => {
+          await signOut();
+          navigate({ to: "/login" });
+        }}
+      />
     </div>
   );
 }
