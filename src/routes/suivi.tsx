@@ -61,14 +61,15 @@ function SuiviPage() {
   // Calculs auto
   const stats = useMemo(() => {
     const monthSales = data.sales.filter(s => isCurrentMonth(s.date));
-    const encaisse = monthSales.reduce((sum, s) => {
-      if (s.status === "Payé") return sum + s.amount;
-      return sum + (s.amount - (s.amountRemaining || 0));
-    }, 0);
-    const aRecuperer = monthSales.reduce((sum, s) =>
-      s.status === "Doit encore" ? sum + (s.amountRemaining || 0) : sum, 0);
+    const paidSales = monthSales.filter(s => s.status === "Payée");
+    const encaisse = paidSales.reduce((sum, s) => sum + s.amount, 0);
+    const aRecuperer = monthSales
+      .filter(s => s.status === "En attente")
+      .reduce((sum, s) => sum + s.amount, 0);
     const depenses = data.expenses.filter(e => isCurrentMonth(e.date)).reduce((sum, e) => sum + e.amount, 0);
     const benefice = encaisse - depenses;
+    const salesCount = monthSales.length;
+    const avgSale = paidSales.length > 0 ? Math.round(encaisse / paidSales.length) : 0;
 
     // Produit star
     const productCount: Record<string, number> = {};
@@ -84,7 +85,22 @@ function SuiviPage() {
       return daysBetween(last, today) >= 3;
     });
 
-    return { encaisse, aRecuperer, depenses, benefice, star, stale };
+    // Prospects sans vente associée (match par whatsapp normalisé)
+    const norm = (w: string) => (w || "").replace(/\D/g, "");
+    const saleWhatsapps = new Set(data.sales.map(s => norm(s.whatsapp)).filter(Boolean));
+    const monthProspects = data.prospects.filter(p => isCurrentMonth(p.date));
+    const prospectsCount = monthProspects.length;
+    const toFollowUp = monthProspects.filter(p =>
+      p.status !== "Converti" && !saleWhatsapps.has(norm(p.whatsapp))
+    ).length;
+
+    // 5 dernières ventes (toutes)
+    const recentSales = [...data.sales]
+      .sort((a, b) => (a.date < b.date ? 1 : -1))
+      .slice(0, 5);
+
+    return { encaisse, aRecuperer, depenses, benefice, star, stale,
+             salesCount, avgSale, prospectsCount, toFollowUp, recentSales };
   }, [data]);
 
   const productById = (id: string) => data.products.find(p => p.id === id);
