@@ -165,19 +165,62 @@ function SuiviPage() {
             onClick={() => setShowList("prospects")}
             className="bg-white rounded-2xl p-4 text-left shadow-sm border border-neutral-100 active:scale-95 transition"
           >
-            <div className="text-2xl font-bold text-neutral-900">{data.prospects.length}</div>
-            <div className="text-xs text-neutral-600 mt-1">Prospects</div>
+            <div className="text-2xl font-bold text-neutral-900">{stats.prospectsCount}</div>
+            <div className="text-xs text-neutral-600 mt-1">Prospects ce mois</div>
+            {stats.toFollowUp > 0 && (
+              <div className="text-[11px] text-orange-600 font-semibold mt-1">{stats.toFollowUp} à relancer</div>
+            )}
           </button>
           <button
             onClick={() => setShowList("sales")}
             className="bg-white rounded-2xl p-4 text-left shadow-sm border border-neutral-100 active:scale-95 transition"
           >
-            <div className="text-2xl font-bold text-neutral-900">{data.sales.filter(s => isCurrentMonth(s.date)).length}</div>
+            <div className="text-2xl font-bold text-neutral-900">{stats.salesCount}</div>
             <div className="text-xs text-neutral-600 mt-1">Ventes ce mois</div>
+            {stats.avgSale > 0 && (
+              <div className="text-[11px] text-emerald-600 font-semibold mt-1">Moy. {fmt(stats.avgSale)}</div>
+            )}
           </button>
         </div>
 
+        {/* Ventes récentes */}
+        {stats.recentSales.length > 0 && (
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-neutral-100 space-y-2">
+            <h3 className="text-xs font-bold uppercase tracking-wide text-neutral-500">Ventes récentes</h3>
+            <ul className="divide-y divide-neutral-100">
+              {stats.recentSales.map(s => {
+                const prod = productById(s.productId);
+                const pending = s.status === "En attente";
+                return (
+                  <li key={s.id} className="py-2 flex items-center gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-semibold text-neutral-900 truncate">{prod?.name || "—"}</div>
+                      <div className="text-xs text-neutral-500 truncate">{s.clientName}</div>
+                    </div>
+                    <div className="text-sm font-bold text-neutral-900 shrink-0">{fmt(s.amount)}</div>
+                    <span className={`text-[10px] px-2 py-1 rounded-full font-semibold shrink-0 ${pending ? "bg-orange-100 text-orange-700" : "bg-emerald-100 text-emerald-700"}`}>
+                      {s.status}
+                    </span>
+                    {pending && (
+                      <button
+                        onClick={() => {
+                          update(d => ({ ...d, sales: d.sales.map(x => x.id === s.id ? { ...x, status: "Payée" } : x) }));
+                          toast.success("Vente marquée payée");
+                        }}
+                        className="text-[10px] font-semibold text-emerald-700 underline shrink-0"
+                      >
+                        Marquer payée
+                      </button>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+
       </div>
+
 
       {/* Bottom CTAs */}
       <div className="fixed bottom-16 left-0 right-0 z-40 px-3 pb-3 pt-3 bg-gradient-to-t from-[hsl(40,40%,96%)] via-[hsl(40,40%,96%)]/95 to-transparent">
