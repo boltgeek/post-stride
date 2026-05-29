@@ -1,6 +1,6 @@
 // Local storage for Suivi (CRM léger) — prospects, ventes, produits, profil
 export type ProspectStatus = "Nouveau" | "Relancé" | "Converti" | "Perdu";
-export type SaleStatus = "Payé" | "Doit encore";
+export type SaleStatus = "Payée" | "En attente";
 export type ExpenseCategory = "Stock" | "Livraison" | "Publicité" | "Autre";
 
 export interface Expense {
