@@ -1,18 +1,20 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, useMemo, useEffect } from "react";
-import { Plus, AlertTriangle, Trophy, MessageCircle, Phone, X, Trash2, Wallet, Settings } from "lucide-react";
+import { Plus, AlertTriangle, Trophy, MessageCircle, Phone, X, Trash2, Wallet, Settings, LogOut, ChevronRight, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Switch } from "@/components/ui/switch";
 import { BottomNav } from "@/components/BottomNav";
 import { useAuth } from "@/lib/auth";
 import { useSuivi } from "@/hooks/use-suivi";
 import {
   type Prospect, type Sale, type Product, type ProspectStatus, type SaleStatus,
-  type Expense, type ExpenseCategory,
+  type Expense, type ExpenseCategory, type Currency, type SuiviSettings,
   uid, todayISO, daysBetween, isCurrentMonth,
 } from "@/lib/suivi-store";
 import { toast } from "sonner";
