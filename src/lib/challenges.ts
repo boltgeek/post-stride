@@ -109,7 +109,6 @@ export async function joinChallenge(challengeId: string) {
     type_compte: "member",
     score: 0,
     prenom: displayName,
-    email: user?.email ?? null,
   });
   if (error && !error.message.includes("duplicate")) throw error;
 }
