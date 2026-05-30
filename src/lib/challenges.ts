@@ -23,7 +23,6 @@ export interface ChallengeParticipant {
   id: string;
   challenge_id: string;
   user_id: string | null;
-  email: string | null;
   prenom: string | null;
   type_compte: "member" | "free";
   score: number;
