@@ -41,7 +41,6 @@ export type Database = {
       challenge_participants: {
         Row: {
           challenge_id: string
-          email: string | null
           id: string
           joined_at: string
           prenom: string | null
@@ -52,7 +51,6 @@ export type Database = {
         }
         Insert: {
           challenge_id: string
-          email?: string | null
           id?: string
           joined_at?: string
           prenom?: string | null
@@ -63,7 +61,6 @@ export type Database = {
         }
         Update: {
           challenge_id?: string
-          email?: string | null
           id?: string
           joined_at?: string
           prenom?: string | null

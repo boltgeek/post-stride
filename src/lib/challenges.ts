@@ -23,7 +23,6 @@ export interface ChallengeParticipant {
   id: string;
   challenge_id: string;
   user_id: string | null;
-  email: string | null;
   prenom: string | null;
   type_compte: "member" | "free";
   score: number;
@@ -110,7 +109,6 @@ export async function joinChallenge(challengeId: string) {
     type_compte: "member",
     score: 0,
     prenom: displayName,
-    email: user?.email ?? null,
   });
   if (error && !error.message.includes("duplicate")) throw error;
 }
