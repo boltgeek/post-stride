@@ -1,10 +1,10 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Home, Calendar, BarChart3, TrendingUp } from "lucide-react";
+import { Home, Calendar, Flame, TrendingUp } from "lucide-react";
 
 const navItems = [
   { to: "/home", icon: Home, label: "Accueil" },
   { to: "/calendar", icon: Calendar, label: "Calendrier" },
-  { to: "/analytics", icon: BarChart3, label: "Classement" },
+  { to: "/analytics", icon: Flame, label: "Challenges" },
   { to: "/suivi", icon: TrendingUp, label: "Suivi" },
 ] as const;
 
