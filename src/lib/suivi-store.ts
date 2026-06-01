@@ -45,7 +45,12 @@ export interface SuiviProfile {
   setupDone: boolean;
 }
 
-const KEY = "routinepost.suivi.v1";
+const KEY_PREFIX = "routinepost.suivi.v1";
+const LEGACY_KEY = "routinepost.suivi.v1";
+
+function keyFor(userId: string | null | undefined) {
+  return userId ? `${KEY_PREFIX}:${userId}` : null;
+}
 
 export type Currency = "FCFA" | "XAF" | "EUR" | "USD";
 
@@ -72,10 +77,22 @@ const DEFAULT: SuiviData = {
   settings: { currency: "FCFA", alertsEnabled: true },
 };
 
-export function loadSuivi(): SuiviData {
+export function loadSuivi(userId?: string | null): SuiviData {
   if (typeof window === "undefined") return DEFAULT;
+  const k = keyFor(userId);
+  if (!k) return DEFAULT;
   try {
-    const raw = localStorage.getItem(KEY);
+    let raw = localStorage.getItem(k);
+    // One-time migration: if user-scoped key is empty but a legacy global key exists,
+    // adopt it for this user, then delete the legacy key so it never leaks to others.
+    if (!raw) {
+      const legacy = localStorage.getItem(LEGACY_KEY);
+      if (legacy && legacy !== "null") {
+        localStorage.setItem(k, legacy);
+        localStorage.removeItem(LEGACY_KEY);
+        raw = legacy;
+      }
+    }
     if (!raw) return DEFAULT;
     const parsed = JSON.parse(raw);
     const merged: SuiviData = { ...DEFAULT, ...parsed };
@@ -92,10 +109,17 @@ export function loadSuivi(): SuiviData {
   }
 }
 
-export function saveSuivi(data: SuiviData) {
+export function saveSuivi(data: SuiviData, userId?: string | null) {
   if (typeof window === "undefined") return;
-  localStorage.setItem(KEY, JSON.stringify(data));
+  const k = keyFor(userId);
+  if (!k) return; // no user → don't persist
+  localStorage.setItem(k, JSON.stringify(data));
   window.dispatchEvent(new Event("suivi-updated"));
+}
+
+export function clearAllLegacySuivi() {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(LEGACY_KEY);
 }
 
 export function uid() {
