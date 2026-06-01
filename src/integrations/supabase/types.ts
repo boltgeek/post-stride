@@ -533,6 +533,33 @@ export type Database = {
           },
         ]
       }
+      user_goals: {
+        Row: {
+          created_at: string
+          id: string
+          period: string
+          target_amount: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          period: string
+          target_amount: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          period?: string
+          target_amount?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_stats: {
         Row: {
           ai_full_unlocked_at: string | null
