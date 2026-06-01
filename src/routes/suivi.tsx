@@ -12,12 +12,14 @@ import { Switch } from "@/components/ui/switch";
 import { BottomNav } from "@/components/BottomNav";
 import { useAuth } from "@/lib/auth";
 import { useSuivi } from "@/hooks/use-suivi";
+import { useGoal, periodBounds, PERIOD_LABEL, type GoalPeriod } from "@/hooks/use-goal";
 import {
   type Prospect, type Sale, type Product, type ProspectStatus, type SaleStatus,
   type Expense, type ExpenseCategory, type Currency, type SuiviSettings,
   uid, todayISO, daysBetween, isCurrentMonth,
 } from "@/lib/suivi-store";
 import { toast } from "sonner";
+import { Target } from "lucide-react";
 
 export const Route = createFileRoute("/suivi")({
   component: SuiviPage,
@@ -125,12 +127,14 @@ function SuiviPage() {
           </button>
         </header>
 
+        {/* Goal card replaces "À récupérer" */}
+        <GoalSection products={data.products} sales={data.sales} />
+
         {/* Financial cards */}
-        <div className="grid grid-cols-2 gap-3">
-          <FinCard label="Encaissé ce mois" value={stats.encaisse} bg="bg-emerald-500" />
-          <FinCard label="À récupérer" value={stats.aRecuperer} bg="bg-orange-500" />
-          <FinCard label="Dépenses ce mois" value={stats.depenses} bg="bg-red-500" />
-          <FinCard label="Bénéfice réel" value={stats.benefice} bg="bg-[hsl(220,40%,20%)]" />
+        <div className="grid grid-cols-3 gap-3">
+          <FinCard label="Encaissé" value={stats.encaisse} bg="bg-emerald-500" />
+          <FinCard label="Dépenses" value={stats.depenses} bg="bg-red-500" />
+          <FinCard label="Bénéfice" value={stats.benefice} bg="bg-[hsl(220,40%,20%)]" />
         </div>
 
         {/* Smart alert */}
@@ -370,9 +374,183 @@ function SuiviPage() {
 
 function FinCard({ label, value, bg }: { label: string; value: number; bg: string }) {
   return (
-    <div className={`${bg} text-white rounded-2xl p-4 shadow-md min-w-0`}>
-      <div className="text-[11px] font-semibold opacity-90 uppercase tracking-wide truncate">{label}</div>
-      <div className="text-2xl font-extrabold mt-2 leading-none tracking-tight truncate">{fmt(value)}</div>
+    <div className={`${bg} text-white rounded-2xl p-3 shadow-md min-w-0`}>
+      <div className="text-[10px] font-semibold opacity-90 uppercase tracking-wide truncate">{label}</div>
+      <div className="text-base font-extrabold mt-1 leading-tight truncate">{fmt(value)}</div>
+    </div>
+  );
+}
+
+// ---------- GOAL SECTION ----------
+function GoalSection({ products, sales }: { products: Product[]; sales: Sale[] }) {
+  const { goals, saveGoal, deleteGoal } = useGoal();
+  const [period, setPeriod] = useState<GoalPeriod>("month");
+  const [editing, setEditing] = useState(false);
+  const [amountInput, setAmountInput] = useState("");
+
+  const goal = goals.find(g => g.period === period);
+
+  const earned = useMemo(() => {
+    const { start, end } = periodBounds(period);
+    return sales
+      .filter(s => s.status === "Payée")
+      .filter(s => {
+        const d = new Date(s.date);
+        return d >= start && d < end;
+      })
+      .reduce((sum, s) => sum + s.amount, 0);
+  }, [sales, period]);
+
+  if (!goal && !editing) {
+    return (
+      <div className="bg-white rounded-2xl p-5 shadow-sm border border-neutral-100 text-center space-y-3">
+        <div className="text-3xl">🎯</div>
+        <div>
+          <h3 className="font-bold text-neutral-900">Fixe ton objectif</h3>
+          <p className="text-xs text-neutral-600 mt-1">Combien veux-tu gagner ?</p>
+        </div>
+        <Button
+          onClick={() => { setAmountInput(""); setEditing(true); }}
+          className="w-full h-11 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold"
+        >
+          Définir un objectif
+        </Button>
+      </div>
+    );
+  }
+
+  if (editing) {
+    return (
+      <div className="bg-white rounded-2xl p-4 shadow-sm border border-neutral-100 space-y-3">
+        <div className="flex items-center gap-2">
+          <Target className="w-5 h-5 text-orange-500" />
+          <h3 className="font-bold text-neutral-900">Mon objectif</h3>
+        </div>
+        <div>
+          <Label className="text-xs text-neutral-600">Période</Label>
+          <Select value={period} onValueChange={(v: GoalPeriod) => setPeriod(v)}>
+            <SelectTrigger className="h-11 mt-1"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {(["day","week","month","year"] as GoalPeriod[]).map(p => (
+                <SelectItem key={p} value={p}>{PERIOD_LABEL[p]}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label className="text-xs text-neutral-600">Montant cible (F)</Label>
+          <Input
+            type="number"
+            inputMode="numeric"
+            value={amountInput}
+            onChange={e => setAmountInput(e.target.value)}
+            placeholder="100000"
+            className="h-11 mt-1"
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <Button variant="outline" onClick={() => setEditing(false)} className="h-11 rounded-xl">Annuler</Button>
+          <Button
+            onClick={async () => {
+              const n = Number(amountInput);
+              if (!n || n <= 0) { toast.error("Montant invalide"); return; }
+              await saveGoal(period, n);
+              toast.success("Objectif enregistré");
+              setEditing(false);
+            }}
+            className="h-11 rounded-xl bg-orange-500 hover:bg-orange-600 text-white"
+          >
+            Enregistrer
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const target = goal!.target_amount;
+  const remaining = Math.max(0, target - earned);
+  const pct = Math.min(100, Math.round((earned / target) * 100));
+
+  // Smart decomposition
+  const breakdown = [...products]
+    .filter(p => p.price > 0)
+    .map(p => ({ ...p, salesNeeded: Math.ceil(remaining / p.price) }))
+    .sort((a, b) => a.salesNeeded - b.salesNeeded)
+    .slice(0, 3);
+
+  return (
+    <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-4 shadow-sm border-2 border-orange-200 space-y-3">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <Target className="w-5 h-5 text-orange-600 shrink-0" />
+          <div className="min-w-0">
+            <h3 className="font-bold text-neutral-900 text-sm">Objectif {PERIOD_LABEL[period].toLowerCase()}</h3>
+            <p className="text-xs text-neutral-600">{fmt(target)}</p>
+          </div>
+        </div>
+        <Select value={period} onValueChange={(v: GoalPeriod) => setPeriod(v)}>
+          <SelectTrigger className="h-8 w-auto text-xs shrink-0"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {(["day","week","month","year"] as GoalPeriod[]).map(p => (
+              <SelectItem key={p} value={p}>{PERIOD_LABEL[p]}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Progress bar */}
+      <div>
+        <div className="h-3 bg-white rounded-full overflow-hidden border border-orange-200">
+          <div
+            className="h-full bg-gradient-to-r from-orange-400 to-orange-600 rounded-full transition-all duration-500"
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+        <div className="flex justify-between mt-2 text-xs">
+          <span className="font-semibold text-emerald-700">{fmt(earned)} gagnés</span>
+          <span className="font-bold text-orange-700">{pct}%</span>
+          <span className="font-semibold text-neutral-700">{fmt(remaining)} restant</span>
+        </div>
+      </div>
+
+      {/* Smart breakdown */}
+      {remaining > 0 && breakdown.length > 0 && (
+        <div className="bg-white/70 rounded-xl p-3 space-y-1.5">
+          <p className="text-[11px] font-bold text-neutral-700 uppercase tracking-wide">
+            Pour atteindre ton objectif il te faut :
+          </p>
+          <ul className="space-y-1">
+            {breakdown.map(p => (
+              <li key={p.id} className="text-sm text-neutral-800">
+                → <span className="font-bold">{p.salesNeeded}</span> vente{p.salesNeeded > 1 ? "s" : ""} de <span className="font-semibold">{p.name}</span> à {fmt(p.price)}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {remaining === 0 && (
+        <div className="bg-emerald-100 rounded-xl p-3 text-center text-sm font-bold text-emerald-800">
+          🎉 Objectif atteint, bravo !
+        </div>
+      )}
+
+      <div className="flex gap-2">
+        <Button
+          variant="outline"
+          onClick={() => { setAmountInput(String(target)); setEditing(true); }}
+          className="flex-1 h-9 rounded-xl text-xs"
+        >
+          Modifier
+        </Button>
+        <Button
+          variant="ghost"
+          onClick={async () => { await deleteGoal(period); toast.success("Objectif supprimé"); }}
+          className="h-9 rounded-xl text-xs text-neutral-500"
+        >
+          Supprimer
+        </Button>
+      </div>
     </div>
   );
 }
