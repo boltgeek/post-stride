@@ -12,12 +12,14 @@ import { Switch } from "@/components/ui/switch";
 import { BottomNav } from "@/components/BottomNav";
 import { useAuth } from "@/lib/auth";
 import { useSuivi } from "@/hooks/use-suivi";
+import { useGoal, periodBounds, PERIOD_LABEL, type GoalPeriod } from "@/hooks/use-goal";
 import {
   type Prospect, type Sale, type Product, type ProspectStatus, type SaleStatus,
   type Expense, type ExpenseCategory, type Currency, type SuiviSettings,
   uid, todayISO, daysBetween, isCurrentMonth,
 } from "@/lib/suivi-store";
 import { toast } from "sonner";
+import { Target } from "lucide-react";
 
 export const Route = createFileRoute("/suivi")({
   component: SuiviPage,
