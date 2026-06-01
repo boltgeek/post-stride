@@ -109,10 +109,17 @@ export function loadSuivi(userId?: string | null): SuiviData {
   }
 }
 
-export function saveSuivi(data: SuiviData) {
+export function saveSuivi(data: SuiviData, userId?: string | null) {
   if (typeof window === "undefined") return;
-  localStorage.setItem(KEY, JSON.stringify(data));
+  const k = keyFor(userId);
+  if (!k) return; // no user → don't persist
+  localStorage.setItem(k, JSON.stringify(data));
   window.dispatchEvent(new Event("suivi-updated"));
+}
+
+export function clearAllLegacySuivi() {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(LEGACY_KEY);
 }
 
 export function uid() {
