@@ -66,17 +66,30 @@ function AccountPage() {
     e.preventDefault();
     if (!user) return;
     setNameSuccess("");
+    setError("");
     setNameSaving(true);
-    const { error } = await supabase
-      .from("user_stats")
-      .update({ display_name: displayName.trim() })
-      .eq("user_id", user.id);
-    setNameSaving(false);
-    if (error) {
-      setError(error.message);
-      return;
+    try {
+      const { error } = await supabase
+        .from("user_stats")
+        .update({ display_name: displayName.trim() })
+        .eq("user_id", user.id);
+      if (error) throw error;
+      setNameSuccess("Nom mis à jour ✨");
+      toast.success("Nom mis à jour");
+      // Refresh all places displaying the name (home, leaderboard, etc.)
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["display-name"] }),
+        queryClient.invalidateQueries({ queryKey: ["user-stats"] }),
+        queryClient.invalidateQueries({ queryKey: ["home-leaderboard"] }),
+        queryClient.invalidateQueries({ queryKey: ["home-my-rank"] }),
+      ]);
+    } catch (err: any) {
+      const msg = err?.message || "Erreur lors de la mise à jour";
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setNameSaving(false);
     }
-    setNameSuccess("Nom mis à jour ✨");
   };
 
   if (authLoading || !user) {
