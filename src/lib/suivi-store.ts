@@ -82,17 +82,9 @@ export function loadSuivi(userId?: string | null): SuiviData {
   const k = keyFor(userId);
   if (!k) return DEFAULT;
   try {
-    let raw = localStorage.getItem(k);
-    // One-time migration: if user-scoped key is empty but a legacy global key exists,
-    // adopt it for this user, then delete the legacy key so it never leaks to others.
-    if (!raw) {
-      const legacy = localStorage.getItem(LEGACY_KEY);
-      if (legacy && legacy !== "null") {
-        localStorage.setItem(k, legacy);
-        localStorage.removeItem(LEGACY_KEY);
-        raw = legacy;
-      }
-    }
+    // Always purge any legacy global key — it must never seed a different user's data.
+    try { localStorage.removeItem(LEGACY_KEY); } catch {}
+    const raw = localStorage.getItem(k);
     if (!raw) return DEFAULT;
     const parsed = JSON.parse(raw);
     const merged: SuiviData = { ...DEFAULT, ...parsed };
