@@ -634,7 +634,7 @@ function SetupModal({ open, onClose, onSave }: {
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && firstName && items.length && onClose()}>
+    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
       <DialogContent className="max-w-md rounded-2xl">
         <DialogHeader>
           <DialogTitle>Bienvenue dans Suivi 👋</DialogTitle>
