@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { loadSuivi, saveSuivi } from "@/lib/suivi-store";
 import { useAuth } from "@/lib/auth";
+import { toast } from "sonner";
 
 export function useSuivi() {
   const { user } = useAuth();
