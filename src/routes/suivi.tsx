@@ -300,12 +300,14 @@ function SuiviPage() {
       {/* Modals */}
       <SetupModal
         open={showSetup}
-        onClose={() => setShowSetup(false)}
+        onClose={() => { setShowSetup(false); markOnboardingDone(); }}
         onSave={(profile, products) => {
           update(d => ({ ...d, profile: { ...profile, setupDone: true }, products: [...d.products, ...products] }));
           setShowSetup(false);
+          markOnboardingDone();
         }}
       />
+
 
       <ProspectModal
         open={showProspect !== null}
