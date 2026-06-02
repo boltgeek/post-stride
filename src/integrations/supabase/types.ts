@@ -577,6 +577,7 @@ export type Database = {
           streak: number
           subscription_plan: string | null
           subscription_until: string | null
+          suivi_onboarding_completed: boolean
           total_points: number
           updated_at: string
           user_id: string
@@ -597,6 +598,7 @@ export type Database = {
           streak?: number
           subscription_plan?: string | null
           subscription_until?: string | null
+          suivi_onboarding_completed?: boolean
           total_points?: number
           updated_at?: string
           user_id: string
@@ -617,6 +619,7 @@ export type Database = {
           streak?: number
           subscription_plan?: string | null
           subscription_until?: string | null
+          suivi_onboarding_completed?: boolean
           total_points?: number
           updated_at?: string
           user_id?: string
