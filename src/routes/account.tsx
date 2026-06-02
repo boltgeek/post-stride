@@ -113,15 +113,20 @@ function AccountPage() {
       return;
     }
     setSaving(true);
-    const { error } = await supabase.auth.updateUser({ password });
-    setSaving(false);
-    if (error) {
-      setError(error.message);
-      return;
+    try {
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) throw error;
+      setSuccess("Mot de passe mis à jour ✨");
+      toast.success("Mot de passe mis à jour");
+      setPassword("");
+      setConfirm("");
+    } catch (err: any) {
+      const msg = err?.message || "Erreur lors de la mise à jour";
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setSaving(false);
     }
-    setSuccess("Mot de passe mis à jour ✨");
-    setPassword("");
-    setConfirm("");
   };
 
   return (
