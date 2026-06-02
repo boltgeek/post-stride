@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { BottomNav } from "@/components/BottomNav";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,6 +32,7 @@ export const Route = createFileRoute("/account")({
 function AccountPage() {
   const { user, loading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [confirmLogout, setConfirmLogout] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
 
@@ -63,17 +66,30 @@ function AccountPage() {
     e.preventDefault();
     if (!user) return;
     setNameSuccess("");
+    setError("");
     setNameSaving(true);
-    const { error } = await supabase
-      .from("user_stats")
-      .update({ display_name: displayName.trim() })
-      .eq("user_id", user.id);
-    setNameSaving(false);
-    if (error) {
-      setError(error.message);
-      return;
+    try {
+      const { error } = await supabase
+        .from("user_stats")
+        .update({ display_name: displayName.trim() })
+        .eq("user_id", user.id);
+      if (error) throw error;
+      setNameSuccess("Nom mis à jour ✨");
+      toast.success("Nom mis à jour");
+      // Refresh all places displaying the name (home, leaderboard, etc.)
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["display-name"] }),
+        queryClient.invalidateQueries({ queryKey: ["user-stats"] }),
+        queryClient.invalidateQueries({ queryKey: ["home-leaderboard"] }),
+        queryClient.invalidateQueries({ queryKey: ["home-my-rank"] }),
+      ]);
+    } catch (err: any) {
+      const msg = err?.message || "Erreur lors de la mise à jour";
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setNameSaving(false);
     }
-    setNameSuccess("Nom mis à jour ✨");
   };
 
   if (authLoading || !user) {
@@ -97,15 +113,20 @@ function AccountPage() {
       return;
     }
     setSaving(true);
-    const { error } = await supabase.auth.updateUser({ password });
-    setSaving(false);
-    if (error) {
-      setError(error.message);
-      return;
+    try {
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) throw error;
+      setSuccess("Mot de passe mis à jour ✨");
+      toast.success("Mot de passe mis à jour");
+      setPassword("");
+      setConfirm("");
+    } catch (err: any) {
+      const msg = err?.message || "Erreur lors de la mise à jour";
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setSaving(false);
     }
-    setSuccess("Mot de passe mis à jour ✨");
-    setPassword("");
-    setConfirm("");
   };
 
   return (

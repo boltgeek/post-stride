@@ -39,23 +39,25 @@ function HomePage() {
   const { posts, streak, totalPoints, loading } = useAppData();
   const queryClient = useQueryClient();
 
-  const [firstName, setFirstName] = useState("");
-
   useEffect(() => {
     if (!authLoading && !user) navigate({ to: "/login" });
   }, [authLoading, user, navigate]);
 
-  useEffect(() => {
-    if (!user) return;
-    (async () => {
-      const { data } = await supabase
+  const { data: displayNameData } = useQuery({
+    queryKey: ["display-name", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
         .from("user_stats")
         .select("display_name")
         .maybeSingle();
-      const raw = data?.display_name || user.email?.split("@")[0] || "toi";
-      setFirstName(raw.split(/\s+/)[0]);
-    })();
-  }, [user]);
+      if (error) throw error;
+      return data?.display_name ?? null;
+    },
+    enabled: !!user,
+  });
+
+  const rawName = displayNameData || user?.email?.split("@")[0] || "toi";
+  const firstName = rawName.split(/\s+/)[0];
 
   // Leaderboard (top 10) with realtime + interval refresh
   const { data: leaderboard = [] } = useQuery({

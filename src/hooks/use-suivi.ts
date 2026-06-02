@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { loadSuivi, saveSuivi } from "@/lib/suivi-store";
 import { useAuth } from "@/lib/auth";
+import { toast } from "sonner";
 
 export function useSuivi() {
   const { user } = useAuth();
@@ -24,10 +25,18 @@ export function useSuivi() {
 
   const update = useCallback(
     (updater: (d: ReturnType<typeof loadSuivi>) => ReturnType<typeof loadSuivi>) => {
-      if (!userId) return; // never persist without a user
-      const next = updater(loadSuivi(userId));
-      saveSuivi(next, userId);
-      setData(next);
+      if (!userId) {
+        toast.error("Connecte-toi pour enregistrer cette action");
+        return;
+      }
+      try {
+        const next = updater(loadSuivi(userId));
+        saveSuivi(next, userId);
+        setData(next);
+      } catch (err: any) {
+        console.error("suivi update error", err);
+        toast.error(err?.message || "Erreur lors de l'enregistrement");
+      }
     },
     [userId]
   );

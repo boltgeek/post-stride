@@ -66,7 +66,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.error("signOut error", e);
+    }
+    // Hard reload to /login: guarantees a clean slate, no blank screens
+    // from suspended queries still mounted in the previous user's session.
+    if (typeof window !== "undefined") {
+      window.location.replace("/login");
+    }
   };
 
   return (
