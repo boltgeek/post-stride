@@ -39,6 +39,10 @@ function HomePage() {
   const { posts, streak, totalPoints, loading } = useAppData();
   const queryClient = useQueryClient();
 
+  useEffect(() => {
+    if (!authLoading && !user) navigate({ to: "/login" });
+  }, [authLoading, user, navigate]);
+
   const { data: displayNameData } = useQuery({
     queryKey: ["display-name", user?.id],
     queryFn: async () => {
