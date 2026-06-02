@@ -47,6 +47,7 @@ function SuiviPage() {
   const navigate = useNavigate();
   const { data, update } = useSuivi();
   const [showSetup, setShowSetup] = useState(false);
+  const [onboardingChecked, setOnboardingChecked] = useState(false);
   const [showProspect, setShowProspect] = useState<Prospect | "new" | null>(null);
   const [showSale, setShowSale] = useState<Sale | "new" | null>(null);
   const [showExpense, setShowExpense] = useState<Expense | "new" | null>(null);
@@ -54,9 +55,47 @@ function SuiviPage() {
   const [showProducts, setShowProducts] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
+  // Check Supabase-side onboarding flag once per user; only then decide
+  // whether to display the welcome modal. Avoids flashing it for users who
+  // already completed it on another device/browser.
   useEffect(() => {
-    if (!data.profile?.setupDone) setShowSetup(true);
-  }, [data.profile?.setupDone]);
+    let cancelled = false;
+    if (!user?.id) { setOnboardingChecked(false); return; }
+    (async () => {
+      try {
+        const { supabase } = await import("@/integrations/supabase/client");
+        const { data: row } = await supabase
+          .from("user_stats")
+          .select("suivi_onboarding_completed")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (cancelled) return;
+        const done = !!(row as any)?.suivi_onboarding_completed || !!data.profile?.setupDone;
+        setShowSetup(!done);
+        setOnboardingChecked(true);
+      } catch {
+        if (!cancelled) {
+          setShowSetup(!data.profile?.setupDone);
+          setOnboardingChecked(true);
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user?.id]);
+
+  const markOnboardingDone = async () => {
+    if (!user?.id) return;
+    try {
+      const { supabase } = await import("@/integrations/supabase/client");
+      await supabase
+        .from("user_stats")
+        .update({ suivi_onboarding_completed: true } as any)
+        .eq("user_id", user.id);
+    } catch (e) {
+      console.error("mark onboarding error", e);
+    }
+  };
+
 
   const firstName = data.profile?.firstName || user?.email?.split("@")[0] || "";
 
