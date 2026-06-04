@@ -71,12 +71,32 @@ export function CommunitySupportBlock({ challengeId }: Props) {
     },
   });
 
-  // Tick every minute so locked slots auto-unlock without reload
-  const [, force] = useState(0);
+  // Realtime: refetch as soon as any participant submits or updates an assignment today
   useEffect(() => {
-    const i = setInterval(() => force((x) => x + 1), 60_000);
-    return () => clearInterval(i);
-  }, []);
+    const channel = supabase
+      .channel(`community-${challengeId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "community_assignments", filter: `challenge_id=eq.${challengeId}` },
+        () => {
+          assignedQ.refetch();
+          myPostQ.refetch();
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "community_posts", filter: `challenge_id=eq.${challengeId}` },
+        () => {
+          assignedQ.refetch();
+          myPostQ.refetch();
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [challengeId]);
 
   const submit = async () => {
     const trimmed = url.trim();
