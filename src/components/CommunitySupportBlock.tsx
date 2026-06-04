@@ -124,11 +124,6 @@ export function CommunitySupportBlock({ challengeId }: Props) {
   const assignedTotal = assigned.length;
   const assignedDone = assigned.filter((a) => a.completed_at).length;
 
-  const groupedBySlot = SLOTS.map((s) => ({
-    ...s,
-    items: assigned.filter((a) => a.slot_time === s.time),
-  }));
-
   return (
     <div className="bg-card rounded-2xl p-4 shadow-card border border-border mb-5">
       <p className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
