@@ -272,62 +272,37 @@ export function CommunitySupportBlock({ challengeId }: Props) {
               Aucun post à soutenir pour le moment. Reviens plus tard 👀
             </p>
           ) : (
-            groupedBySlot.map((g) => {
-              if (g.items.length === 0) return null;
-              const unlocked = isSlotUnlocked(g.time);
+            assigned.map((it) => {
+              const isDone = !!it.completed_at;
               return (
-                <div key={g.time} className="space-y-1.5">
-                  <div className="flex items-center gap-2">
-                    <p className="text-xs font-semibold text-foreground">Créneau {g.time}</p>
-                    {!unlocked && <Lock className="w-3 h-3 text-muted-foreground" />}
+                <div
+                  key={it.id}
+                  className="rounded-lg p-2.5 border bg-muted/40 border-border"
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <p className="text-xs font-medium text-foreground truncate flex-1">
+                      {it.owner_name}
+                    </p>
+                    {isDone && <CheckCircle2 className="w-4 h-4 text-green-600" />}
                   </div>
-                  {g.items.map((it) => {
-                    const isDone = !!it.completed_at;
-                    const locked = !unlocked && !isDone;
-                    return (
-                      <div
-                        key={it.id}
-                        className={`rounded-lg p-2.5 border ${
-                          locked
-                            ? "bg-muted/30 border-border opacity-50"
-                            : "bg-muted/40 border-border"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-1.5">
-                          <p className="text-xs font-medium text-foreground truncate flex-1">
-                            {it.owner_name}
-                          </p>
-                          {isDone && <CheckCircle2 className="w-4 h-4 text-green-600" />}
-                        </div>
-                        <a
-                          href={locked ? undefined : it.facebook_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => {
-                            if (locked) e.preventDefault();
-                          }}
-                          className={`inline-flex items-center gap-1 text-xs mb-1.5 ${
-                            locked
-                              ? "text-muted-foreground"
-                              : "text-primary underline"
-                          }`}
-                        >
-                          <ExternalLink className="w-3 h-3" />
-                          {locked ? "Lien verrouillé" : "Ouvrir le post"}
-                        </a>
-                        {!isDone && (
-                          <button
-                            onClick={() => markDone(it.id)}
-                            disabled={locked}
-                            className="w-full mt-1 py-1.5 rounded-md text-white text-xs font-semibold disabled:opacity-40"
-                            style={{ backgroundColor: "#ec7a3c" }}
-                          >
-                            {locked ? `Disponible à ${g.time}` : "Marquer comme fait"}
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
+                  <a
+                    href={it.facebook_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs mb-1.5 text-primary underline"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    Ouvrir le post
+                  </a>
+                  {!isDone && (
+                    <button
+                      onClick={() => markDone(it.id)}
+                      className="w-full mt-1 py-1.5 rounded-md text-white text-xs font-semibold"
+                      style={{ backgroundColor: "#ec7a3c" }}
+                    >
+                      Marquer comme fait
+                    </button>
+                  )}
                 </div>
               );
             })
