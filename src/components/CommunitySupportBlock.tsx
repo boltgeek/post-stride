@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, ExternalLink, CheckCircle2, Clock, Lock } from "lucide-react";
+import { Loader2, ExternalLink, CheckCircle2, Clock } from "lucide-react";
 
 interface Props {
   challengeId: string;
@@ -32,24 +32,7 @@ interface MyAssignment {
   owner_user_id: string;
   owner_name: string;
   completed_at: string | null;
-}
-
-const SLOTS: Array<{ time: string; hour: number }> = [
-  { time: "10:00", hour: 10 },
-  { time: "11:00", hour: 11 },
-  { time: "12:00", hour: 12 },
-  { time: "13:00", hour: 13 },
-  { time: "14:00", hour: 14 },
-  { time: "15:00", hour: 15 },
-  { time: "16:00", hour: 16 },
-  { time: "17:00", hour: 17 },
-  { time: "18:00", hour: 18 },
-  { time: "19:00", hour: 19 },
-];
-
-function isSlotUnlocked(slotTime: string): boolean {
-  const [h] = slotTime.split(":").map(Number);
-  return new Date().getHours() >= h;
+  created_at: string;
 }
 
 export function CommunitySupportBlock({ challengeId }: Props) {
@@ -88,12 +71,32 @@ export function CommunitySupportBlock({ challengeId }: Props) {
     },
   });
 
-  // Tick every minute so locked slots auto-unlock without reload
-  const [, force] = useState(0);
+  // Realtime: refetch as soon as any participant submits or updates an assignment today
   useEffect(() => {
-    const i = setInterval(() => force((x) => x + 1), 60_000);
-    return () => clearInterval(i);
-  }, []);
+    const channel = supabase
+      .channel(`community-${challengeId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "community_assignments", filter: `challenge_id=eq.${challengeId}` },
+        () => {
+          assignedQ.refetch();
+          myPostQ.refetch();
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "community_posts", filter: `challenge_id=eq.${challengeId}` },
+        () => {
+          assignedQ.refetch();
+          myPostQ.refetch();
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [challengeId]);
 
   const submit = async () => {
     const trimmed = url.trim();
@@ -140,11 +143,6 @@ export function CommunitySupportBlock({ challengeId }: Props) {
   const assigned = assignedQ.data || [];
   const assignedTotal = assigned.length;
   const assignedDone = assigned.filter((a) => a.completed_at).length;
-
-  const groupedBySlot = SLOTS.map((s) => ({
-    ...s,
-    items: assigned.filter((a) => a.slot_time === s.time),
-  }));
 
   return (
     <div className="bg-card rounded-2xl p-4 shadow-card border border-border mb-5">
@@ -294,62 +292,37 @@ export function CommunitySupportBlock({ challengeId }: Props) {
               Aucun post à soutenir pour le moment. Reviens plus tard 👀
             </p>
           ) : (
-            groupedBySlot.map((g) => {
-              if (g.items.length === 0) return null;
-              const unlocked = isSlotUnlocked(g.time);
+            assigned.map((it) => {
+              const isDone = !!it.completed_at;
               return (
-                <div key={g.time} className="space-y-1.5">
-                  <div className="flex items-center gap-2">
-                    <p className="text-xs font-semibold text-foreground">Créneau {g.time}</p>
-                    {!unlocked && <Lock className="w-3 h-3 text-muted-foreground" />}
+                <div
+                  key={it.id}
+                  className="rounded-lg p-2.5 border bg-muted/40 border-border"
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <p className="text-xs font-medium text-foreground truncate flex-1">
+                      {it.owner_name}
+                    </p>
+                    {isDone && <CheckCircle2 className="w-4 h-4 text-green-600" />}
                   </div>
-                  {g.items.map((it) => {
-                    const isDone = !!it.completed_at;
-                    const locked = !unlocked && !isDone;
-                    return (
-                      <div
-                        key={it.id}
-                        className={`rounded-lg p-2.5 border ${
-                          locked
-                            ? "bg-muted/30 border-border opacity-50"
-                            : "bg-muted/40 border-border"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-1.5">
-                          <p className="text-xs font-medium text-foreground truncate flex-1">
-                            {it.owner_name}
-                          </p>
-                          {isDone && <CheckCircle2 className="w-4 h-4 text-green-600" />}
-                        </div>
-                        <a
-                          href={locked ? undefined : it.facebook_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => {
-                            if (locked) e.preventDefault();
-                          }}
-                          className={`inline-flex items-center gap-1 text-xs mb-1.5 ${
-                            locked
-                              ? "text-muted-foreground"
-                              : "text-primary underline"
-                          }`}
-                        >
-                          <ExternalLink className="w-3 h-3" />
-                          {locked ? "Lien verrouillé" : "Ouvrir le post"}
-                        </a>
-                        {!isDone && (
-                          <button
-                            onClick={() => markDone(it.id)}
-                            disabled={locked}
-                            className="w-full mt-1 py-1.5 rounded-md text-white text-xs font-semibold disabled:opacity-40"
-                            style={{ backgroundColor: "#ec7a3c" }}
-                          >
-                            {locked ? `Disponible à ${g.time}` : "Marquer comme fait"}
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
+                  <a
+                    href={it.facebook_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs mb-1.5 text-primary underline"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    Ouvrir le post
+                  </a>
+                  {!isDone && (
+                    <button
+                      onClick={() => markDone(it.id)}
+                      className="w-full mt-1 py-1.5 rounded-md text-white text-xs font-semibold"
+                      style={{ backgroundColor: "#ec7a3c" }}
+                    >
+                      Marquer comme fait
+                    </button>
+                  )}
                 </div>
               );
             })
