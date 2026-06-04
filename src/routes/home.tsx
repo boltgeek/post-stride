@@ -222,7 +222,7 @@ function HomePage() {
         {/* Header */}
         <header className="animate-slide-up">
           <h1 className="text-2xl font-extrabold text-foreground tracking-tight">
-            Salut {firstName} 👋
+            Salut 👋
           </h1>
           <p className="text-sm text-muted-foreground mt-1">Voici ton tableau de bord</p>
         </header>
