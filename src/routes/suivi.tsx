@@ -512,11 +512,26 @@ function GoalSection({ products, sales }: { products: Product[]; sales: Sale[] }
   const remaining = Math.max(0, target - earned);
   const pct = Math.min(100, Math.round((earned / target) * 100));
 
-  // Smart decomposition
+  // Days remaining in current period
+  const { end } = periodBounds(period);
+  const msLeft = end.getTime() - Date.now();
+  const daysLeft = Math.max(0, Math.ceil(msLeft / 86400000));
+
+  // Per-product breakdown — sales of that product in this period vs target needed
+  const { start: pStart, end: pEnd } = periodBounds(period);
+  const periodSales = sales.filter(s => {
+    if (s.status !== "Payée") return false;
+    const d = new Date(s.date);
+    return d >= pStart && d < pEnd;
+  });
   const breakdown = [...products]
     .filter(p => p.price > 0)
-    .map(p => ({ ...p, salesNeeded: Math.ceil(remaining / p.price) }))
-    .sort((a, b) => a.salesNeeded - b.salesNeeded)
+    .map(p => {
+      const needed = Math.max(1, Math.ceil(target / p.price));
+      const sold = periodSales.filter(s => s.productId === p.id).length;
+      return { ...p, needed, sold };
+    })
+    .sort((a, b) => a.needed - b.needed)
     .slice(0, 3);
 
   return (
@@ -529,14 +544,19 @@ function GoalSection({ products, sales }: { products: Product[]; sales: Sale[] }
             <p className="text-xs text-neutral-600">{fmt(target)}</p>
           </div>
         </div>
-        <Select value={period} onValueChange={(v: GoalPeriod) => setPeriod(v)}>
-          <SelectTrigger className="h-8 w-auto text-xs shrink-0"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {(["day","week","month","year"] as GoalPeriod[]).map(p => (
-              <SelectItem key={p} value={p}>{PERIOD_LABEL[p]}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-[11px] font-semibold bg-white border border-orange-200 text-orange-700 rounded-full px-2 py-1 whitespace-nowrap">
+            ⏳ {daysLeft} j restant{daysLeft > 1 ? "s" : ""}
+          </span>
+          <Select value={period} onValueChange={(v: GoalPeriod) => setPeriod(v)}>
+            <SelectTrigger className="h-8 w-auto text-xs"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {(["day","week","month","year"] as GoalPeriod[]).map(p => (
+                <SelectItem key={p} value={p}>{PERIOD_LABEL[p]}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Progress bar */}
@@ -554,18 +574,30 @@ function GoalSection({ products, sales }: { products: Product[]; sales: Sale[] }
         </div>
       </div>
 
-      {/* Smart breakdown */}
-      {remaining > 0 && breakdown.length > 0 && (
-        <div className="bg-white/70 rounded-xl p-3 space-y-1.5">
+      {/* Persistent breakdown — always visible to keep the goal in mind */}
+      {breakdown.length > 0 && (
+        <div className="bg-white/70 rounded-xl p-3 space-y-2">
           <p className="text-[11px] font-bold text-neutral-700 uppercase tracking-wide">
-            Pour atteindre ton objectif il te faut :
+            Répartition par produit
           </p>
-          <ul className="space-y-1">
-            {breakdown.map(p => (
-              <li key={p.id} className="text-sm text-neutral-800">
-                → <span className="font-bold">{p.salesNeeded}</span> vente{p.salesNeeded > 1 ? "s" : ""} de <span className="font-semibold">{p.name}</span> à {fmt(p.price)}
-              </li>
-            ))}
+          <ul className="space-y-2">
+            {breakdown.map(p => {
+              const ratio = Math.min(100, Math.round((p.sold / p.needed) * 100));
+              const blocks = 5;
+              const filled = Math.round((ratio / 100) * blocks);
+              const bar = "█".repeat(filled) + "░".repeat(blocks - filled);
+              return (
+                <li key={p.id} className="text-sm text-neutral-800">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono text-xs text-orange-600 tracking-tighter">[{bar}]</span>
+                    <span className="text-xs font-bold text-neutral-900 shrink-0">
+                      {p.sold}/{p.needed} ventes
+                    </span>
+                    <span className="text-xs text-neutral-600 truncate flex-1 text-right">— {p.name}</span>
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}
