@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, ExternalLink, CheckCircle2, Clock, Lock } from "lucide-react";
+import { Loader2, ExternalLink, CheckCircle2, Clock } from "lucide-react";
 
 interface Props {
   challengeId: string;
@@ -32,24 +32,7 @@ interface MyAssignment {
   owner_user_id: string;
   owner_name: string;
   completed_at: string | null;
-}
-
-const SLOTS: Array<{ time: string; hour: number }> = [
-  { time: "10:00", hour: 10 },
-  { time: "11:00", hour: 11 },
-  { time: "12:00", hour: 12 },
-  { time: "13:00", hour: 13 },
-  { time: "14:00", hour: 14 },
-  { time: "15:00", hour: 15 },
-  { time: "16:00", hour: 16 },
-  { time: "17:00", hour: 17 },
-  { time: "18:00", hour: 18 },
-  { time: "19:00", hour: 19 },
-];
-
-function isSlotUnlocked(slotTime: string): boolean {
-  const [h] = slotTime.split(":").map(Number);
-  return new Date().getHours() >= h;
+  created_at: string;
 }
 
 export function CommunitySupportBlock({ challengeId }: Props) {
