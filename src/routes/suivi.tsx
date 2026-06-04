@@ -153,7 +153,7 @@ function SuiviPage() {
         <header className="flex items-start justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold text-neutral-900">
-              Bonjour {firstName} 👋
+              Bonjour 👋
             </h1>
             <p className="text-sm text-neutral-600 mt-1">Voici ton suivi du mois</p>
           </div>
