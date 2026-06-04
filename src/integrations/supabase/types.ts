@@ -704,6 +704,7 @@ export type Database = {
         Args: { _challenge_id: string }
         Returns: {
           completed_at: string
+          created_at: string
           facebook_url: string
           id: string
           owner_name: string
