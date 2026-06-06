@@ -1,9 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { Trophy, Flame, FileText, Award, Loader2, ArrowRight, Crown, Activity } from "lucide-react";
+import { useEffect, useMemo } from "react";
+import { Trophy, Flame, FileText, Award, Loader2, ArrowRight, Activity, Package, UserRound, CheckCircle2 } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
 import { useAuth } from "@/lib/auth";
 import { useAppData } from "@/hooks/use-app-data";
+import { useSuivi } from "@/hooks/use-suivi";
+import { todayISO, daysBetween } from "@/lib/suivi-store";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -219,13 +221,8 @@ function HomePage() {
   return (
     <div className="min-h-screen bg-background pb-28">
       <div className="max-w-lg mx-auto px-4 pt-6 space-y-5">
-        {/* Header */}
-        <header className="animate-slide-up">
-          <h1 className="text-2xl font-extrabold text-foreground tracking-tight">
-            Salut 👋
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">Voici ton tableau de bord</p>
-        </header>
+        {/* À traiter */}
+        <AToHandleBlock />
 
         {/* Personal stats */}
         <section className="grid grid-cols-2 gap-3 animate-slide-up">
@@ -243,47 +240,7 @@ function HomePage() {
           })}
         </section>
 
-        {/* Leaderboard */}
-        <section className="bg-card rounded-3xl p-5 border border-border shadow-card animate-slide-up">
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-base font-extrabold text-foreground flex items-center gap-2">
-              <Crown className="w-5 h-5 text-warning" /> Top 10
-            </p>
-            <Link to="/analytics" className="text-xs font-semibold text-primary">
-              Challenges →
-            </Link>
-          </div>
-          {leaderboard.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-6">
-              Publie pour entrer dans le classement
-            </p>
-          ) : (
-            <ul className="space-y-2">
-              {leaderboard.filter((r) => r.total_score > 0).slice(0, 10).map((row) => (
-                <li
-                  key={row.user_id}
-                  className={`flex items-center gap-3 rounded-xl p-2.5 ${
-                    row.is_current_user ? "bg-primary/10 border border-primary/40" : "bg-background"
-                  }`}
-                >
-                  <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
-                    row.rank === 1 ? "bg-warning text-warning-foreground"
-                    : row.rank === 2 ? "bg-muted-foreground/30 text-foreground"
-                    : row.rank === 3 ? "bg-streak/30 text-streak"
-                    : "bg-muted text-foreground"
-                  }`}>
-                    {row.rank}
-                  </div>
-                  <p className="flex-1 text-sm font-medium text-foreground truncate">
-                    {row.display_name}
-                    {row.is_current_user && <span className="text-xs text-primary ml-1">(toi)</span>}
-                  </p>
-                  <p className="text-sm font-bold text-foreground">{row.total_score}</p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+
 
         {/* Recent activity */}
         <section className="bg-card rounded-3xl p-5 border border-border shadow-card animate-slide-up">
@@ -338,3 +295,62 @@ function HomePage() {
     </div>
   );
 }
+
+function AToHandleBlock() {
+  const { data } = useSuivi();
+  const { pendingOrders, prospectsToFollow } = useMemo(() => {
+    const pending = data.sales.filter((s) => s.status === "En attente").length;
+    const today = todayISO();
+    const stale = data.prospects.filter((p) => {
+      if (p.status === "Converti") return false;
+      const last = p.lastFollowUp || p.date;
+      return daysBetween(last, today) >= 3;
+    }).length;
+    return { pendingOrders: pending, prospectsToFollow: stale };
+  }, [data]);
+
+  const allClear = pendingOrders === 0 && prospectsToFollow === 0;
+
+  return (
+    <section className="bg-card rounded-3xl p-5 border border-border shadow-card animate-slide-up">
+      <p className="text-base font-extrabold text-foreground mb-3">⚡ À traiter</p>
+      {allClear ? (
+        <div className="flex items-center gap-2 text-success font-semibold text-sm py-2">
+          <CheckCircle2 className="w-5 h-5" /> Tout est à jour !
+        </div>
+      ) : (
+        <ul className="space-y-2">
+          <li>
+            <Link
+              to="/suivi"
+              className="flex items-center gap-3 rounded-xl p-3 bg-background active:scale-[0.98] transition"
+            >
+              <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Package className="w-5 h-5 text-primary" />
+              </div>
+              <p className="flex-1 text-sm font-semibold text-foreground">
+                📦 {pendingOrders} commande{pendingOrders > 1 ? "s" : ""} en attente
+              </p>
+              <ArrowRight className="w-4 h-4 text-muted-foreground" />
+            </Link>
+          </li>
+          <li>
+            <Link
+              to="/suivi"
+              className="flex items-center gap-3 rounded-xl p-3 bg-background active:scale-[0.98] transition"
+            >
+              <div className="w-9 h-9 rounded-xl bg-warning/10 flex items-center justify-center">
+                <UserRound className="w-5 h-5 text-warning" />
+              </div>
+              <p className="flex-1 text-sm font-semibold text-foreground">
+                👤 {prospectsToFollow} prospect{prospectsToFollow > 1 ? "s" : ""} à relancer
+              </p>
+              <ArrowRight className="w-4 h-4 text-muted-foreground" />
+            </Link>
+          </li>
+        </ul>
+      )}
+    </section>
+  );
+}
+

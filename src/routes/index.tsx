@@ -35,9 +35,15 @@ function Landing() {
 
   useEffect(() => {
     if (!loading && user) {
-      navigate({ to: "/home" });
+      navigate({ to: "/home", replace: true });
     }
   }, [loading, user, navigate]);
+
+  // While we know there is a session but haven't finished navigating,
+  // don't flash the landing page (also prevents back-button returning here).
+  if (loading || user) {
+    return <div className="min-h-screen" style={{ backgroundColor: "#F5F0EB" }} />;
+  }
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#F5F0EB" }}>
