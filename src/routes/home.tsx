@@ -295,3 +295,62 @@ function HomePage() {
     </div>
   );
 }
+
+function AToHandleBlock() {
+  const { data } = useSuivi();
+  const { pendingOrders, prospectsToFollow } = useMemo(() => {
+    const pending = data.sales.filter((s) => s.status === "En attente").length;
+    const today = todayISO();
+    const stale = data.prospects.filter((p) => {
+      if (p.status === "Converti") return false;
+      const last = p.lastFollowUp || p.date;
+      return daysBetween(last, today) >= 3;
+    }).length;
+    return { pendingOrders: pending, prospectsToFollow: stale };
+  }, [data]);
+
+  const allClear = pendingOrders === 0 && prospectsToFollow === 0;
+
+  return (
+    <section className="bg-card rounded-3xl p-5 border border-border shadow-card animate-slide-up">
+      <p className="text-base font-extrabold text-foreground mb-3">⚡ À traiter</p>
+      {allClear ? (
+        <div className="flex items-center gap-2 text-success font-semibold text-sm py-2">
+          <CheckCircle2 className="w-5 h-5" /> Tout est à jour !
+        </div>
+      ) : (
+        <ul className="space-y-2">
+          <li>
+            <Link
+              to="/suivi"
+              className="flex items-center gap-3 rounded-xl p-3 bg-background active:scale-[0.98] transition"
+            >
+              <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Package className="w-5 h-5 text-primary" />
+              </div>
+              <p className="flex-1 text-sm font-semibold text-foreground">
+                📦 {pendingOrders} commande{pendingOrders > 1 ? "s" : ""} en attente
+              </p>
+              <ArrowRight className="w-4 h-4 text-muted-foreground" />
+            </Link>
+          </li>
+          <li>
+            <Link
+              to="/suivi"
+              className="flex items-center gap-3 rounded-xl p-3 bg-background active:scale-[0.98] transition"
+            >
+              <div className="w-9 h-9 rounded-xl bg-warning/10 flex items-center justify-center">
+                <UserRound className="w-5 h-5 text-warning" />
+              </div>
+              <p className="flex-1 text-sm font-semibold text-foreground">
+                👤 {prospectsToFollow} prospect{prospectsToFollow > 1 ? "s" : ""} à relancer
+              </p>
+              <ArrowRight className="w-4 h-4 text-muted-foreground" />
+            </Link>
+          </li>
+        </ul>
+      )}
+    </section>
+  );
+}
+
