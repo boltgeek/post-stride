@@ -149,18 +149,12 @@ function SuiviPage() {
   return (
     <div className="min-h-screen bg-[hsl(40,40%,96%)] pb-32">
       <div className="max-w-lg mx-auto px-4 pt-6 space-y-5">
-        {/* Greeting */}
-        <header className="flex items-start justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-bold text-neutral-900">
-              Bonjour 👋
-            </h1>
-            <p className="text-sm text-neutral-600 mt-1">Voici ton suivi du mois</p>
-          </div>
+        {/* Top bar */}
+        <header className="flex items-center justify-end">
           <button
             onClick={() => setShowSettings(true)}
             aria-label="Paramètres"
-            className="shrink-0 mt-1 w-10 h-10 rounded-full bg-white border border-neutral-200 flex items-center justify-center text-neutral-600 active:scale-95 transition shadow-sm"
+            className="shrink-0 w-10 h-10 rounded-full bg-white border border-neutral-200 flex items-center justify-center text-neutral-600 active:scale-95 transition shadow-sm"
           >
             <Settings className="w-5 h-5" />
           </button>
@@ -168,6 +162,11 @@ function SuiviPage() {
 
         {/* Goal card replaces "À récupérer" */}
         <GoalSection products={data.products} sales={data.sales} />
+
+        {/* This week vs last week */}
+        <ThisWeekBlock sales={data.sales} products={data.products} />
+
+
 
         {/* Financial cards */}
         <div className="grid grid-cols-3 gap-3">
