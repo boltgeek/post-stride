@@ -539,6 +539,8 @@ export type Database = {
           id: string
           period: string
           period_end_date: string | null
+          period_start_date: string | null
+          product_targets: Json
           target_amount: number
           updated_at: string
           user_id: string
@@ -548,6 +550,8 @@ export type Database = {
           id?: string
           period: string
           period_end_date?: string | null
+          period_start_date?: string | null
+          product_targets?: Json
           target_amount: number
           updated_at?: string
           user_id: string
@@ -557,6 +561,8 @@ export type Database = {
           id?: string
           period?: string
           period_end_date?: string | null
+          period_start_date?: string | null
+          product_targets?: Json
           target_amount?: number
           updated_at?: string
           user_id?: string

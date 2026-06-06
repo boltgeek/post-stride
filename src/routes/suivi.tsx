@@ -12,7 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { BottomNav } from "@/components/BottomNav";
 import { useAuth } from "@/lib/auth";
 import { useSuivi } from "@/hooks/use-suivi";
-import { useGoal, periodBounds, PERIOD_LABEL, type GoalPeriod } from "@/hooks/use-goal";
+import { useGoal, periodBounds, PERIOD_LABEL, type GoalPeriod, type ProductTarget } from "@/hooks/use-goal";
 import {
   type Prospect, type Sale, type Product, type ProspectStatus, type SaleStatus,
   type Expense, type ExpenseCategory, type Currency, type SuiviSettings,
@@ -427,19 +427,41 @@ function GoalSection({ products, sales }: { products: Product[]; sales: Sale[] }
   const [period, setPeriod] = useState<GoalPeriod>("month");
   const [editing, setEditing] = useState(false);
   const [amountInput, setAmountInput] = useState("");
+  const [draftTargets, setDraftTargets] = useState<Record<string, string>>({});
 
   const goal = goals.find(g => g.period === period);
 
-  const earned = useMemo(() => {
-    const { start, end } = periodBounds(period);
-    return sales
-      .filter(s => s.status === "Payée")
-      .filter(s => {
-        const d = new Date(s.date);
-        return d >= start && d < end;
-      })
-      .reduce((sum, s) => sum + s.amount, 0);
-  }, [sales, period]);
+  // Period bounds: prefer stored dates so breakdown survives until period_end_date
+  const periodStart = useMemo(() => {
+    if (goal?.period_start_date) return new Date(goal.period_start_date);
+    return periodBounds(period).start;
+  }, [goal, period]);
+  const periodEnd = useMemo(() => {
+    if (goal?.period_end_date) return new Date(goal.period_end_date);
+    return periodBounds(period).end;
+  }, [goal, period]);
+
+  const periodSales = useMemo(
+    () => sales.filter(s => {
+      if (s.status !== "Payée") return false;
+      const d = new Date(s.date);
+      return d >= periodStart && d < periodEnd;
+    }),
+    [sales, periodStart, periodEnd]
+  );
+
+  const earned = useMemo(
+    () => periodSales.reduce((sum, s) => sum + s.amount, 0),
+    [periodSales]
+  );
+
+  const openEditor = () => {
+    setAmountInput(goal ? String(goal.target_amount) : "");
+    const seed: Record<string, string> = {};
+    (goal?.product_targets || []).forEach(pt => { seed[pt.product_id] = String(pt.target_quantity); });
+    setDraftTargets(seed);
+    setEditing(true);
+  };
 
   if (!goal && !editing) {
     return (
@@ -450,7 +472,7 @@ function GoalSection({ products, sales }: { products: Product[]; sales: Sale[] }
           <p className="text-xs text-neutral-600 mt-1">Combien veux-tu gagner ?</p>
         </div>
         <Button
-          onClick={() => { setAmountInput(""); setEditing(true); }}
+          onClick={openEditor}
           className="w-full h-11 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold"
         >
           Définir un objectif
@@ -488,15 +510,51 @@ function GoalSection({ products, sales }: { products: Product[]; sales: Sale[] }
             className="h-11 mt-1"
           />
         </div>
+
+        <div className="space-y-2">
+          <Label className="text-xs text-neutral-600">Quantités cibles par produit (optionnel)</Label>
+          {products.length === 0 && (
+            <p className="text-xs text-neutral-500">Ajoute d'abord des produits pour définir une répartition.</p>
+          )}
+          <div className="space-y-2 max-h-60 overflow-y-auto">
+            {products.map(p => (
+              <div key={p.id} className="flex items-center gap-2 min-w-0">
+                <span className="flex-1 min-w-0 text-sm text-neutral-800 truncate">{p.name}</span>
+                <Input
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  placeholder="0"
+                  value={draftTargets[p.id] ?? ""}
+                  onChange={e => setDraftTargets(prev => ({ ...prev, [p.id]: e.target.value }))}
+                  className="h-9 w-20 shrink-0 text-right"
+                />
+                <span className="text-xs text-neutral-500 shrink-0">ventes</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 gap-2">
           <Button variant="outline" onClick={() => setEditing(false)} className="h-11 rounded-xl">Annuler</Button>
           <Button
             onClick={async () => {
               const n = Number(amountInput);
               if (!n || n <= 0) { toast.error("Montant invalide"); return; }
-              await saveGoal(period, n);
-              toast.success("Objectif enregistré");
-              setEditing(false);
+              const pts: ProductTarget[] = products
+                .map(p => ({
+                  product_id: p.id,
+                  product_name: p.name,
+                  target_quantity: Math.max(0, Math.floor(Number(draftTargets[p.id] || 0))),
+                }))
+                .filter(pt => pt.target_quantity > 0);
+              try {
+                await saveGoal(period, n, pts);
+                toast.success("Objectif enregistré");
+                setEditing(false);
+              } catch (err: any) {
+                toast.error(err?.message || "Erreur lors de l'enregistrement");
+              }
             }}
             className="h-11 rounded-xl bg-orange-500 hover:bg-orange-600 text-white"
           >
@@ -511,41 +569,29 @@ function GoalSection({ products, sales }: { products: Product[]; sales: Sale[] }
   const remaining = Math.max(0, target - earned);
   const pct = Math.min(100, Math.round((earned / target) * 100));
 
-  // Days remaining in current period
-  const { end } = periodBounds(period);
-  const msLeft = end.getTime() - Date.now();
+  const msLeft = periodEnd.getTime() - Date.now();
   const daysLeft = Math.max(0, Math.ceil(msLeft / 86400000));
 
-  // Per-product breakdown — sales of that product in this period vs target needed
-  const { start: pStart, end: pEnd } = periodBounds(period);
-  const periodSales = sales.filter(s => {
-    if (s.status !== "Payée") return false;
-    const d = new Date(s.date);
-    return d >= pStart && d < pEnd;
+  // Per-product breakdown — fully user-defined, persistent across resets
+  const breakdown = (goal!.product_targets || []).map(pt => {
+    const sold = periodSales.filter(s => s.productId === pt.product_id).length;
+    const ratio = pt.target_quantity > 0 ? Math.min(100, (sold / pt.target_quantity) * 100) : 0;
+    return { ...pt, sold, ratio, reached: sold >= pt.target_quantity };
   });
-  const breakdown = [...products]
-    .filter(p => p.price > 0)
-    .map(p => {
-      const needed = Math.max(1, Math.ceil(target / p.price));
-      const sold = periodSales.filter(s => s.productId === p.id).length;
-      return { ...p, needed, sold };
-    })
-    .sort((a, b) => a.needed - b.needed)
-    .slice(0, 3);
 
   return (
-    <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-4 shadow-sm border-2 border-orange-200 space-y-3">
+    <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-4 shadow-sm border-2 border-orange-200 space-y-3 min-w-0 overflow-hidden">
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <Target className="w-5 h-5 text-orange-600 shrink-0" />
           <div className="min-w-0">
-            <h3 className="font-bold text-neutral-900 text-sm">Objectif {PERIOD_LABEL[period].toLowerCase()}</h3>
-            <p className="text-xs text-neutral-600">{fmt(target)}</p>
+            <h3 className="font-bold text-neutral-900 text-sm truncate">Objectif {PERIOD_LABEL[period].toLowerCase()}</h3>
+            <p className="text-xs text-neutral-600 truncate">{fmt(target)}</p>
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <span className="text-[11px] font-semibold bg-white border border-orange-200 text-orange-700 rounded-full px-2 py-1 whitespace-nowrap">
-            ⏳ {daysLeft} j restant{daysLeft > 1 ? "s" : ""}
+            ⏳ {daysLeft} j
           </span>
           <Select value={period} onValueChange={(v: GoalPeriod) => setPeriod(v)}>
             <SelectTrigger className="h-8 w-auto text-xs"><SelectValue /></SelectTrigger>
@@ -558,7 +604,7 @@ function GoalSection({ products, sales }: { products: Product[]; sales: Sale[] }
         </div>
       </div>
 
-      {/* Progress bar */}
+      {/* Overall progress bar */}
       <div>
         <div className="h-3 bg-white rounded-full overflow-hidden border border-orange-200">
           <div
@@ -566,37 +612,41 @@ function GoalSection({ products, sales }: { products: Product[]; sales: Sale[] }
             style={{ width: `${pct}%` }}
           />
         </div>
-        <div className="flex justify-between mt-2 text-xs">
-          <span className="font-semibold text-emerald-700">{fmt(earned)} gagnés</span>
-          <span className="font-bold text-orange-700">{pct}%</span>
-          <span className="font-semibold text-neutral-700">{fmt(remaining)} restant</span>
+        <div className="flex justify-between mt-2 text-xs gap-2">
+          <span className="font-semibold text-emerald-700 truncate">{fmt(earned)} gagnés</span>
+          <span className="font-bold text-orange-700 shrink-0">{pct}%</span>
+          <span className="font-semibold text-neutral-700 truncate text-right">{fmt(remaining)} restant</span>
         </div>
       </div>
 
-      {/* Persistent breakdown — always visible to keep the goal in mind */}
+      {/* User-defined breakdown — persistent across resets */}
       {breakdown.length > 0 && (
-        <div className="bg-white/70 rounded-xl p-3 space-y-2">
-          <p className="text-[11px] font-bold text-neutral-700 uppercase tracking-wide">
+        <div className="bg-white rounded-xl p-4 min-w-0">
+          <p className="text-[11px] font-bold text-neutral-700 uppercase tracking-wide mb-3">
             Répartition par produit
           </p>
-          <ul className="space-y-2">
-            {breakdown.map(p => {
-              const ratio = Math.min(100, Math.round((p.sold / p.needed) * 100));
-              const blocks = 5;
-              const filled = Math.round((ratio / 100) * blocks);
-              const bar = "█".repeat(filled) + "░".repeat(blocks - filled);
-              return (
-                <li key={p.id} className="text-sm text-neutral-800">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-mono text-xs text-orange-600 tracking-tighter">[{bar}]</span>
-                    <span className="text-xs font-bold text-neutral-900 shrink-0">
-                      {p.sold}/{p.needed} ventes
-                    </span>
-                    <span className="text-xs text-neutral-600 truncate flex-1 text-right">— {p.name}</span>
-                  </div>
-                </li>
-              );
-            })}
+          <ul className="flex flex-col gap-3">
+            {breakdown.map(pt => (
+              <li key={pt.product_id} className="min-w-0">
+                <div className="flex items-center justify-between gap-2 mb-1.5 min-w-0">
+                  <span className="text-sm font-medium text-neutral-900 truncate min-w-0 flex-1">
+                    {pt.product_name}
+                  </span>
+                  <span className="text-xs font-bold text-neutral-700 shrink-0 whitespace-nowrap">
+                    {pt.sold}/{pt.target_quantity} ventes {pt.reached && "✅"}
+                  </span>
+                </div>
+                <div
+                  className="h-2 w-full rounded-full overflow-hidden"
+                  style={{ backgroundColor: "#f0f0f0" }}
+                >
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{ width: `${pt.ratio}%`, backgroundColor: "#F97316" }}
+                  />
+                </div>
+              </li>
+            ))}
           </ul>
         </div>
       )}
@@ -610,7 +660,7 @@ function GoalSection({ products, sales }: { products: Product[]; sales: Sale[] }
       <div className="flex gap-2">
         <Button
           variant="outline"
-          onClick={() => { setAmountInput(String(target)); setEditing(true); }}
+          onClick={openEditor}
           className="flex-1 h-9 rounded-xl text-xs"
         >
           Modifier
