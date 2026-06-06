@@ -221,13 +221,8 @@ function HomePage() {
   return (
     <div className="min-h-screen bg-background pb-28">
       <div className="max-w-lg mx-auto px-4 pt-6 space-y-5">
-        {/* Header */}
-        <header className="animate-slide-up">
-          <h1 className="text-2xl font-extrabold text-foreground tracking-tight">
-            Salut 👋
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">Voici ton tableau de bord</p>
-        </header>
+        {/* À traiter */}
+        <AToHandleBlock />
 
         {/* Personal stats */}
         <section className="grid grid-cols-2 gap-3 animate-slide-up">
@@ -245,47 +240,7 @@ function HomePage() {
           })}
         </section>
 
-        {/* Leaderboard */}
-        <section className="bg-card rounded-3xl p-5 border border-border shadow-card animate-slide-up">
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-base font-extrabold text-foreground flex items-center gap-2">
-              <Crown className="w-5 h-5 text-warning" /> Top 10
-            </p>
-            <Link to="/analytics" className="text-xs font-semibold text-primary">
-              Challenges →
-            </Link>
-          </div>
-          {leaderboard.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-6">
-              Publie pour entrer dans le classement
-            </p>
-          ) : (
-            <ul className="space-y-2">
-              {leaderboard.filter((r) => r.total_score > 0).slice(0, 10).map((row) => (
-                <li
-                  key={row.user_id}
-                  className={`flex items-center gap-3 rounded-xl p-2.5 ${
-                    row.is_current_user ? "bg-primary/10 border border-primary/40" : "bg-background"
-                  }`}
-                >
-                  <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
-                    row.rank === 1 ? "bg-warning text-warning-foreground"
-                    : row.rank === 2 ? "bg-muted-foreground/30 text-foreground"
-                    : row.rank === 3 ? "bg-streak/30 text-streak"
-                    : "bg-muted text-foreground"
-                  }`}>
-                    {row.rank}
-                  </div>
-                  <p className="flex-1 text-sm font-medium text-foreground truncate">
-                    {row.display_name}
-                    {row.is_current_user && <span className="text-xs text-primary ml-1">(toi)</span>}
-                  </p>
-                  <p className="text-sm font-bold text-foreground">{row.total_score}</p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+
 
         {/* Recent activity */}
         <section className="bg-card rounded-3xl p-5 border border-border shadow-card animate-slide-up">
