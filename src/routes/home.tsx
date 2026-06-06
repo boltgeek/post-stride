@@ -1,9 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { Trophy, Flame, FileText, Award, Loader2, ArrowRight, Crown, Activity } from "lucide-react";
+import { useEffect, useMemo } from "react";
+import { Trophy, Flame, FileText, Award, Loader2, ArrowRight, Activity, Package, UserRound, CheckCircle2 } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
 import { useAuth } from "@/lib/auth";
 import { useAppData } from "@/hooks/use-app-data";
+import { useSuivi } from "@/hooks/use-suivi";
+import { todayISO, daysBetween } from "@/lib/suivi-store";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
