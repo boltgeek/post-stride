@@ -627,6 +627,89 @@ function GoalSection({ products, sales }: { products: Product[]; sales: Sale[] }
   );
 }
 
+// ---------- THIS WEEK BLOCK ----------
+function ThisWeekBlock({ sales, products }: { sales: Sale[]; products: Product[] }) {
+  const stats = useMemo(() => {
+    // Monday-based week
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const dow = (startOfDay.getDay() + 6) % 7; // Monday=0
+    const thisWeekStart = new Date(startOfDay);
+    thisWeekStart.setDate(startOfDay.getDate() - dow);
+    const lastWeekStart = new Date(thisWeekStart);
+    lastWeekStart.setDate(thisWeekStart.getDate() - 7);
+    const tomorrow = new Date(startOfDay);
+    tomorrow.setDate(startOfDay.getDate() + 1);
+
+    const paid = sales.filter((s) => s.status === "Payée");
+    const inRange = (s: Sale, start: Date, end: Date) => {
+      const d = new Date(s.date);
+      return d >= start && d < end;
+    };
+    const thisWeek = paid.filter((s) => inRange(s, thisWeekStart, tomorrow));
+    const lastWeek = paid.filter((s) => inRange(s, lastWeekStart, thisWeekStart));
+
+    const totalThis = thisWeek.reduce((s, x) => s + x.amount, 0);
+    const totalLast = lastWeek.reduce((s, x) => s + x.amount, 0);
+
+    let pctDiff: number | null = null;
+    if (totalLast > 0) pctDiff = Math.round(((totalThis - totalLast) / totalLast) * 100);
+    else if (totalThis > 0) pctDiff = 100;
+
+    // Best day
+    const byDay: Record<string, number> = {};
+    thisWeek.forEach((s) => { byDay[s.date] = (byDay[s.date] || 0) + s.amount; });
+    const bestDayEntry = Object.entries(byDay).sort((a, b) => b[1] - a[1])[0];
+    const bestDay = bestDayEntry
+      ? { name: new Date(bestDayEntry[0]).toLocaleDateString("fr-FR", { weekday: "long" }), amount: bestDayEntry[1] }
+      : null;
+
+    // Best product
+    const byProd: Record<string, number> = {};
+    thisWeek.forEach((s) => { byProd[s.productId] = (byProd[s.productId] || 0) + 1; });
+    const bestProdEntry = Object.entries(byProd).sort((a, b) => b[1] - a[1])[0];
+    const bestProduct = bestProdEntry
+      ? { name: products.find((p) => p.id === bestProdEntry[0])?.name || "—", qty: bestProdEntry[1] }
+      : null;
+
+    return { totalThis, totalLast, pctDiff, bestDay, bestProduct, hasData: thisWeek.length > 0 };
+  }, [sales, products]);
+
+  return (
+    <div className="bg-white rounded-2xl p-4 shadow-sm border border-neutral-100 space-y-3">
+      <h3 className="font-bold text-neutral-900 text-sm">📈 Cette semaine</h3>
+      {!stats.hasData ? (
+        <p className="text-sm text-neutral-500">Aucune vente cette semaine</p>
+      ) : (
+        <div className="space-y-2">
+          <div className="flex items-baseline justify-between">
+            <span className="text-2xl font-extrabold text-neutral-900">{fmt(stats.totalThis)}</span>
+            {stats.pctDiff !== null && (
+              <span className={`text-sm font-bold ${stats.pctDiff >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+                {stats.pctDiff >= 0 ? "↑" : "↓"} {Math.abs(stats.pctDiff)}%
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-neutral-500">
+            Semaine dernière : <span className="font-semibold text-neutral-700">{fmt(stats.totalLast)}</span>
+          </p>
+          {stats.bestDay && (
+            <p className="text-sm text-neutral-800">
+              🏆 Meilleur jour : <span className="font-semibold capitalize">{stats.bestDay.name}</span> — {fmt(stats.bestDay.amount)}
+            </p>
+          )}
+          {stats.bestProduct && (
+            <p className="text-sm text-neutral-800">
+              ⭐ Produit star : <span className="font-semibold">{stats.bestProduct.name}</span> ({stats.bestProduct.qty} vente{stats.bestProduct.qty > 1 ? "s" : ""})
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 function ExpenseModal({ open, expense, onClose, onSave, onDelete }: {
   open: boolean;
   expense: Expense | null;
